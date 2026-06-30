@@ -8,6 +8,11 @@
   "bin": {
     "topo": "./bin/topo.mjs"
   },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
