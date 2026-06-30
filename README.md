@@ -2,11 +2,9 @@
   <img src="docs/banner.png" alt="topo /toolchain — See how your codebase really works" width="100%" />
 </p>
 
-<p align="center"><b>Drop it into any repo and your coding agent draws a live map of every system — kept in sync with the code as it changes.</b></p>
+# Drop it into any repo and your coding agent draws a live map of every system — kept in sync with the code as it changes.
 
-<p align="center">
-  <code>drop-in</code> &nbsp;·&nbsp; <code>any language</code> &nbsp;·&nbsp; <code>local-only</code> &nbsp;·&nbsp; <code>bring your own AI</code> &nbsp;·&nbsp; <code>always in sync</code>
-</p>
+drop-in · any language · local-only · bring your own AI · always in sync
 
 ---
 
