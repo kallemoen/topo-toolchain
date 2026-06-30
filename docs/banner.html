@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper:#F6F3EC; --paper2:#EFEBE1; --ink:#1A1A17; --ink-soft:#57534A; --ink-faint:#8C8576;
+    --vermilion:#DC4A2A; --cobalt:#2748C8; --forest:#1F9457; --line:#D9D3C6; --line2:#C3BBA9;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { width:1280px; height:400px; font-family:'Newsreader',Georgia,serif; background:var(--paper); -webkit-font-smoothing:antialiased; }
+  .banner { width:1280px; height:400px; display:flex; }
+  .dots { background-image:radial-gradient(var(--line) 1.1px, transparent 1.1px); background-size:19px 19px; }
+
+  .left { width:624px; height:100%; padding:46px 50px; border-right:1.5px solid var(--line2); }
+  .brand { display:flex; align-items:center; gap:11px; margin-bottom:34px; }
+  .logo { width:40px; height:40px; border-radius:10px; background:#fff; border:1px solid var(--line2); position:relative; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  .logo i { position:absolute; border-radius:4px; width:14px; height:14px; }
+  .logo i.a { background:var(--vermilion); left:9px; top:9px; }
+  .logo i.b { background:var(--cobalt); left:17px; top:17px; }
+  .brand .name { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:23px; color:var(--ink); letter-spacing:-.01em; }
+  .brand .sub { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-faint); }
+
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:51px; line-height:1.0; letter-spacing:-.022em; color:var(--ink); margin-bottom:20px; }
+  h1 .v { color:var(--vermilion); }
+  .lede { font-size:19.5px; line-height:1.5; color:var(--ink-soft); max-width:29em; margin-bottom:24px; }
+  .meta { font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.03em; color:var(--ink-faint); }
+
+  .right { width:656px; height:100%; background:var(--paper2); position:relative; }
+  .insync { position:absolute; top:26px; right:30px; background:var(--forest); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; letter-spacing:.13em; padding:8px 15px; border-radius:999px; display:flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(31,148,87,.25); }
+  .insync .d { width:8px; height:8px; border-radius:50%; background:#9af3bf; }
+
+  .marker { position:absolute; top:70px; left:50%; transform:translateX(-50%); background:#fff; border:1px solid var(--line2); border-radius:9px; padding:10px 16px; font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--ink); box-shadow:0 3px 8px rgba(0,0,0,.07); white-space:nowrap; }
+  .marker .m { color:var(--ink-faint); }
+  .mline { position:absolute; left:50%; top:116px; width:0; height:50px; border-left:1.5px dashed var(--line2); transform:translateX(-.75px); }
+
+  .frame { position:absolute; left:42px; right:42px; top:166px; bottom:44px; border:1.6px dashed var(--line2); border-radius:15px; background:rgba(26,26,23,.022); }
+  .frame .label { position:absolute; top:-13px; left:24px; background:var(--paper2); padding:0 9px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; color:var(--ink); }
+  .frame .label .o { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-faint); margin-left:7px; }
+  .row { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .box { width:152px; height:80px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; box-shadow:0 6px 16px rgba(0,0,0,.16); }
+  .box .t { font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:18px; }
+  .box .k { font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:.85; margin-top:3px; letter-spacing:.04em; }
+  .box.charges { background:var(--cobalt); }
+  .box.refunds { background:var(--vermilion); }
+  .box.ledger { background:var(--forest); }
+  .arrow { width:44px; height:2px; background:var(--ink-soft); position:relative; margin:0 2px; }
+  .arrow::after { content:''; position:absolute; right:-1px; top:-4.5px; border-left:9px solid var(--ink-soft); border-top:5px solid transparent; border-bottom:5px solid transparent; }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <div class="left dots">
+      <div class="brand">
+        <div class="logo"><i class="a"></i><i class="b"></i></div>
+        <span class="name">topo</span>
+        <span class="sub">/toolchain</span>
+      </div>
+      <h1>See how your<br />codebase <span class="v">really works</span>.</h1>
+      <p class="lede">Drop it into any repo and your coding agent draws a live map of every system — kept in sync with the code as it changes.</p>
+      <p class="meta">drop-in&nbsp;&nbsp;·&nbsp;&nbsp;any language&nbsp;&nbsp;·&nbsp;&nbsp;always in sync</p>
+    </div>
+    <div class="right dots">
+      <div class="insync"><span class="d"></span>IN SYNC</div>
+      <div class="marker"><span class="m">//@topo</span> system Refunds</div>
+      <div class="mline"></div>
+      <div class="frame">
+        <div class="label">Payments<span class="o">open</span></div>
+        <div class="row">
+          <div class="box charges"><span class="t">Charges</span><span class="k">activity</span></div>
+          <div class="arrow"></div>
+          <div class="box refunds"><span class="t">Refunds</span><span class="k">activity</span></div>
+          <div class="arrow"></div>
+          <div class="box ledger"><span class="t">Ledger</span><span class="k">storage</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
