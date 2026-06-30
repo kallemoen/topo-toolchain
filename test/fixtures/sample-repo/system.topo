@@ -1,0 +1,28 @@
+// system.topo — the SampleApp map (in sync with the markers).
+
+thing Request { }
+thing Query { }
+thing Result { }
+
+world SampleApp {
+  gateway Users {
+    out Request
+    in Result
+  }
+
+  system Api {
+    activity Router {
+      in Request
+      out Query
+    }
+
+    activity Handler {
+      in Query
+      out Result
+    }
+  }
+
+  Users --( Request )--> Router
+  Router --( Query )--> Handler
+  Handler --( Result )--> Users
+}

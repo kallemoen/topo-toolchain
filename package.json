@@ -1,0 +1,36 @@
+{
+  "name": "topo-toolchain",
+  "version": "0.1.0",
+  "description": "Build & maintain an always-accurate Topo system map of a codebase",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "bin": {
+    "topo": "./bin/topo.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "topo": "tsx src/cli/index.ts",
+    "postinstall": "node -e \"try{require('fs').chmodSync('bin/topo.mjs',0o755)}catch(e){}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:viewer": "bash scripts/build-viewer.sh",
+    "sync:core": "bash scripts/sync-core.sh"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "chokidar": "^4.0.3",
+    "commander": "^13.1.0",
+    "fast-glob": "^3.3.3",
+    "ignore": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
