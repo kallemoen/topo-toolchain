@@ -15,7 +15,11 @@ Topo is built to be run **by your coding agent** (Claude Code, Cursor, or any ag
 ```text
 Set up Topo in this repo so I can see how it works as a live map.
 
-1. Install the CLI once:  npm i -g github:kallemoen/topo-toolchain
+1. Install the CLI once:
+     npm i -g --install-links github:kallemoen/topo-toolchain
+   (The --install-links flag is required: it makes npm fetch the release
+   tarball instead of a git clone, so the global install is a plain-JS file
+   copy that works in sandboxes. Don't drop it.)
 2. Run:  topo init   — scaffolds the map, an agent skill, a rule, and a
    pre-commit hook. It also installs .claude/skills/topo-sync/ — READ IT.
 3. Add //@topo comment markers to each significant system (service, module,
@@ -39,7 +43,7 @@ Keep the //@topo markers in sync whenever you change structure, run
 
 No setup, no account, no keys, **no native build** — it installs as plain JS and works in sandboxes. Nothing leaves your repo.
 
-> Prefer not to install globally? Every command also works as `npx github:kallemoen/topo-toolchain <cmd>`.
+> Prefer not to install globally? Every command also works as `npx github:kallemoen/topo-toolchain <cmd>` (npx doesn't need the flag). If a global install ever misbehaves, the bulletproof form is the tarball URL: `npm i -g "https://github.com/kallemoen/topo-toolchain/archive/refs/heads/main.tar.gz"`.
 
 ---
 
@@ -110,7 +114,7 @@ npm run build:viewer   # rebuild the viewer bundle into src/assets/viewer-dist
 npm run build          # bundle the CLI → dist/topo.mjs (commit this before pushing)
 ```
 
-The shipped CLI is a single pre-bundled file, `dist/topo.mjs`, with **no runtime dependencies and no install scripts** — that's what makes `npm i -g github:…` a reliable file-copy in restricted sandboxes. `dist/` is committed; run `npm run build` and commit it whenever you change `src/`.
+The shipped CLI is a single pre-bundled file, `dist/topo.mjs`, with **no runtime dependencies and no install scripts** — so installing is just a file copy, with no esbuild/native postinstall to fail in a sandbox. `dist/` is committed; run `npm run build` and commit it whenever you change `src/`. (The `--install-links` flag on the global install is what makes npm fetch the committed tarball instead of a git clone — without it, npm 9–11 symlink the global package to an ephemeral cache clone that dangles once the cache is pruned.)
 
 Stack: Node 20 + TypeScript + ESM, bundled with esbuild; the viewer is Vite + React 19 + [`@xyflow/react`](https://github.com/xyflow/xyflow). No model, no API keys, no cloud.
 
