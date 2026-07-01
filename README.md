@@ -20,9 +20,10 @@ Set up Topo in this repo so I can see how it works as a live map.
 2. Run:  topo init   — scaffolds an empty map + a pre-commit hook and installs
    the Topo skill at .claude/skills/topo/.
 3. Read .claude/skills/topo/SKILL.md and follow it: in system.topo, design the
-   systems and the arrows between them, and give each system a code "glob" line
-   so every source file is owned. Do NOT add comments to my code — the whole map
-   lives in system.topo.
+   systems, the arrows between them, and the data shapes that flow (thing
+   declarations with fields), then give each system a code "glob" line so every
+   source file is owned. Do NOT add comments to my code — the whole map lives
+   in system.topo.
 4. Run `topo check` (fix what it lists), then `topo approve`, until the check is
    green. Then `topo view` so I can watch the live map in my browser.
 

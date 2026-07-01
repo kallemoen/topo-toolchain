@@ -22,7 +22,7 @@ system   <Name> { … }                  // an open container (has children)
 activity <Name> { … }                  // a leaf that does something
 storage  <Name> { … }                  // a leaf that holds things
 gateway  <Name> { … }                  // an external dependency you don't own
-thing <Name> { field: Type … }         // a data shape (optional; file scope)
+thing <Name> { field: Type … }         // a data shape — declare one per Thing used
 
   code "<glob>"                        // source files this system owns (see below)
   <A> --( <Thing> )--> <B>             // an authored connection (the arrows)
@@ -41,6 +41,24 @@ thing <Name> { field: Type … }         // a data shape (optional; file scope)
   `topo check` warns (`design: boundary gap`) at minimum when a Thing flows through
   a box that never declares it anywhere — but aim for the full contract, not the
   minimum.
+
+## Things — the data shapes are half the map
+
+Every Thing that appears on a boundary or an arrow gets a `thing` declaration **with
+fields**, at file scope (above the world). The boxes say who does the work; the
+Things say what the work *is* — a map whose data is unshaped is only half designed.
+
+```
+thing Order   { items: [text]  table: int }
+thing Payment { amount: money  method: text }
+```
+
+- Field types: `text` `int` `number` `money` `bool` `id` `time`, and `[T]` for a
+  list (e.g. `[text]`, `[Listing]`). Fields may reference other Things by name.
+- Keep 2–6 fields that capture the *identity* of the data — what a reader needs to
+  understand the flow, not the full production schema.
+- `topo check` warns on a Thing used with no declaration (`design: undeclared
+  thing`) and on a declared shape with no fields (`design: empty thing`).
 
 ## `code` — binding systems to files
 

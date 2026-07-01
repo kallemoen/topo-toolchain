@@ -12,6 +12,11 @@ describe('designLints', () => {
   it('passes a house-style map (boundaries everywhere, arrows edge-declared)', () => {
     // this is the SKILL.md exemplar — it must stay lint-clean
     const src = `
+      thing Order   { items: [text]  table: int }
+      thing Cup     { drink: text  size: text }
+      thing Beans   { origin: text  kg: number }
+      thing Payment { amount: money  method: text }
+
       world CoffeeBar {
         gateway Customer { out Order  in Cup  out Payment }
         gateway Roaster  { in Payment  out Beans }
@@ -134,5 +139,24 @@ describe('designLints', () => {
     }`
     const found = lints(src).filter((e) => e.category === 'unknown-endpoint')
     expect(found.map((e) => e.system)).toEqual(['Nowhere'])
+  })
+
+  it('flags Things used without a declaration, once per Thing', () => {
+    const src = `world W {
+      system A { out X  out X }
+      system B { in X  in Y }
+      A --( X )--> B
+    }`
+    const found = lints(src).filter((e) => e.category === 'undeclared-thing')
+    expect(found.map((e) => e.detail.split(' ')[0]).sort()).toEqual(['X', 'Y'])
+  })
+
+  it('flags declared Things with no fields', () => {
+    const src = `thing X { }\nthing Y { id: id }\nworld W {
+      system A { out X  in Y }
+    }`
+    const found = lints(src).filter((e) => e.category === 'empty-thing')
+    expect(found).toHaveLength(1)
+    expect(found[0].detail).toContain('thing X { }')
   })
 })

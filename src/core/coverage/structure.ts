@@ -42,6 +42,39 @@ export function designLints(world: ToposWorld): DriftEntry[] {
   const entries: DriftEntry[] = []
   const systems = world.systems
 
+  // -- undeclared-thing / empty-thing: every Thing on a boundary or arrow needs a
+  // `thing Name { field: type }` declaration with real fields — the data shapes are
+  // half the map. A used-but-undeclared Thing or a field-less stub is a gap.
+  const usedThings = new Map<string, string>() // thing → where first seen
+  for (const s of Object.values(systems)) {
+    for (const t of [...s.ins, ...s.outs, ...s.holds]) if (!usedThings.has(t)) usedThings.set(t, `${s.kind} ${s.name}`)
+  }
+  for (const c of world.conns) {
+    if (!usedThings.has(c.thing)) usedThings.set(c.thing, `${c.from} --( ${c.thing} )--> ${c.to}`)
+  }
+  for (const [t, where] of usedThings) {
+    if (!world.things[t]) {
+      entries.push({
+        category: 'undeclared-thing',
+        system: '',
+        detail: `${t} flows through the map (first used on ${where}) but has no 'thing ${t} { … }' declaration.`,
+        location: null,
+        suggestion: `Declare 'thing ${t} { field: type … }' at the top of the file — the shape of the data is half the design.`,
+      })
+    }
+  }
+  for (const t of Object.values(world.things)) {
+    if (t.fields.length === 0) {
+      entries.push({
+        category: 'empty-thing',
+        system: '',
+        detail: `thing ${t.name} { } has no fields — a shape with no shape.`,
+        location: null,
+        suggestion: `Give ${t.name} its fields (text int number money bool id time [T]) — what IS this data?`,
+      })
+    }
+  }
+
   // -- unknown-endpoint: an arrow to/from a name that isn't a declared system -----
   for (const c of world.conns) {
     for (const end of [c.from, c.to]) {

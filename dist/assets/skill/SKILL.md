@@ -19,8 +19,10 @@ The map is a **design**, not a file index. Author it in two distinct passes:
 
 **Pass 1 — design the world (ignore files entirely).** Write the map you would draw
 on a whiteboard for a new engineer: the systems, what flows between them, what each
-box takes in and puts out. Judge it purely as a diagram: does every level tell a
-complete story?
+box takes in and puts out — and **declare every Thing with its fields** (`thing
+Order { items: [text]  table: int }`). Start with the data: naming the Things and
+their shapes first makes the boxes and arrows almost draw themselves. Judge the
+result purely as a diagram: does every level tell a complete story?
 
 **Pass 2 — bind the code.** Only then add `code "glob"` lines so every source file is
 owned. **Binding must never reshape the design.** If files don't fit any box, they
@@ -42,12 +44,16 @@ belong to the nearest parent system's glob — do NOT invent a box to hold lefto
 4. **Arrows carry Things and are written in the nearest common parent.** When an
    arrow crosses a box's edge, that box must declare the Thing (`in`/`out`). That's
    what lets the same flow render truthfully at every zoom level.
-5. **No junk drawers.** Never create a system named Operations/Utils/Misc/Shared to
+5. **Every Thing gets a shape.** Declare `thing X { field: type }` for every Thing
+   the map uses — 2–6 fields that capture its identity (types: `text` `int` `number`
+   `money` `bool` `id` `time` `[T]`). A used-but-undeclared Thing, or an empty
+   `thing X { }`, is an unfinished design.
+6. **No junk drawers.** Never create a system named Operations/Utils/Misc/Shared to
    warehouse scripts, tests, types, or config. Bind those files to the system they
    serve (tests of the validator belong to the validator) or to the parent container.
-6. **Right-size every level.** More than ~9 siblings → group them into a subsystem.
+7. **Right-size every level.** More than ~9 siblings → group them into a subsystem.
    A container with one child → dissolve it. Depth is earned by real structure.
-7. **Name boxes by role, Things by payload.** `Validation`, not `SrcValidation`;
+8. **Name boxes by role, Things by payload.** `Validation`, not `SrcValidation`;
    `Listing`, not `Data`. Single identifiers, PascalCase.
 
 ## Worked exemplar — the shape to imitate
@@ -111,8 +117,9 @@ produces zero design warnings — yours should too.
      `ambiguous-ownership` (two *unrelated* systems claim a file — a parent + its own
      child sharing a glob is fine, the child wins), `manifest-unapproved`.
    - **`design:` warnings** (don't block, but treat them as review feedback):
-     `bare-leaf`, `disconnected`, `boundary-gap`, `unknown endpoint`. Fix them —
-     they are precisely the difference between a file index and a real map.
+     `bare-leaf`, `disconnected`, `boundary-gap`, `unknown endpoint`,
+     `undeclared thing`, `empty thing`. Fix them — they are precisely the
+     difference between a file index and a real map.
 4. Run **`topo approve`** — locks the approved snapshot (`system.topo.lock`).
 5. Commit `system.topo`, `system.topo.lock`, and the code together.
 
@@ -123,8 +130,9 @@ produces zero design warnings — yours should too.
 
 1. Survey the codebase top-down (READMEs, entry points, deploy targets) until you can
    name the 3–9 top-level systems and the external gateways.
-2. **Pass 1**: write the full design — things, gateways, systems with boundaries,
-   arrows — judged only as a diagram (rules above, exemplar as the bar).
+2. **Pass 1**: write the full design — every `thing` with its fields, gateways,
+   systems with boundaries, arrows — judged only as a diagram (rules above,
+   exemplar as the bar).
 3. **Pass 2**: bind code with `code` globs until `topo check` shows full coverage.
    Leftover files go to parent globs, never to new boxes.
 4. `topo check` → fix failures AND design warnings → `topo approve` → green.

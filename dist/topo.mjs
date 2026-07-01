@@ -9996,6 +9996,35 @@ var hasBoundary = (s) => s.ins.length + s.outs.length + s.holds.length > 0;
 function designLints(world) {
   const entries = [];
   const systems = world.systems;
+  const usedThings = /* @__PURE__ */ new Map();
+  for (const s of Object.values(systems)) {
+    for (const t of [...s.ins, ...s.outs, ...s.holds]) if (!usedThings.has(t)) usedThings.set(t, `${s.kind} ${s.name}`);
+  }
+  for (const c of world.conns) {
+    if (!usedThings.has(c.thing)) usedThings.set(c.thing, `${c.from} --( ${c.thing} )--> ${c.to}`);
+  }
+  for (const [t, where] of usedThings) {
+    if (!world.things[t]) {
+      entries.push({
+        category: "undeclared-thing",
+        system: "",
+        detail: `${t} flows through the map (first used on ${where}) but has no 'thing ${t} { \u2026 }' declaration.`,
+        location: null,
+        suggestion: `Declare 'thing ${t} { field: type \u2026 }' at the top of the file \u2014 the shape of the data is half the design.`
+      });
+    }
+  }
+  for (const t of Object.values(world.things)) {
+    if (t.fields.length === 0) {
+      entries.push({
+        category: "empty-thing",
+        system: "",
+        detail: `thing ${t.name} { } has no fields \u2014 a shape with no shape.`,
+        location: null,
+        suggestion: `Give ${t.name} its fields (text int number money bool id time [T]) \u2014 what IS this data?`
+      });
+    }
+  }
   for (const c of world.conns) {
     for (const end of [c.from, c.to]) {
       if (!systems[end]) {
@@ -10102,7 +10131,9 @@ var CATEGORY_ORDER = {
   "unknown-endpoint": 5,
   "bare-leaf": 6,
   "disconnected-system": 7,
-  "boundary-gap": 8
+  "boundary-gap": 8,
+  "undeclared-thing": 9,
+  "empty-thing": 10
 };
 function mappedDirs(ownedFiles) {
   const dirs = /* @__PURE__ */ new Set();
@@ -10237,7 +10268,9 @@ var LABEL = {
   "unknown-endpoint": "design: unknown endpoint",
   "bare-leaf": "design: bare leaf",
   "disconnected-system": "design: disconnected",
-  "boundary-gap": "design: boundary gap"
+  "boundary-gap": "design: boundary gap",
+  "undeclared-thing": "design: undeclared thing",
+  "empty-thing": "design: empty thing"
 };
 var HINT = {
   "manifest-unapproved": "run `topo approve`",
@@ -10248,7 +10281,9 @@ var HINT = {
   "unknown-endpoint": "declare the missing box or fix the name",
   "bare-leaf": "declare in/out/holds on every leaf \u2014 the boundary is what makes each level readable",
   "disconnected-system": "wire it in with boundaries + arrows, or fold its code into the system it serves",
-  "boundary-gap": "declare the Thing on every edge the arrow crosses"
+  "boundary-gap": "declare the Thing on every edge the arrow crosses",
+  "undeclared-thing": "declare 'thing X { field: type }' for every Thing the map uses",
+  "empty-thing": "give each thing its fields \u2014 the data shapes are half the design"
 };
 var GROUP_THRESHOLD = 6;
 function groupKey(e) {

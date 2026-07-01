@@ -16,6 +16,8 @@ export type DriftCategory =
   | 'disconnected-system' // a box wired to nothing in its whole subtree
   | 'boundary-gap' // an arrow crosses a box's edge the box doesn't declare
   | 'unknown-endpoint' // an arrow to/from an undeclared system name
+  | 'undeclared-thing' // a Thing used on boundaries/arrows with no `thing` declaration
+  | 'empty-thing' // a `thing` declared with no fields — a shape with no shape
 
 export interface DriftEntry {
   category: DriftCategory

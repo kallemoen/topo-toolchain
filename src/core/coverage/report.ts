@@ -16,6 +16,8 @@ const LABEL: Record<DriftEntry['category'], string> = {
   'bare-leaf': 'design: bare leaf',
   'disconnected-system': 'design: disconnected',
   'boundary-gap': 'design: boundary gap',
+  'undeclared-thing': 'design: undeclared thing',
+  'empty-thing': 'design: empty thing',
 }
 
 const HINT: Record<DriftEntry['category'], string> = {
@@ -28,6 +30,8 @@ const HINT: Record<DriftEntry['category'], string> = {
   'bare-leaf': 'declare in/out/holds on every leaf — the boundary is what makes each level readable',
   'disconnected-system': 'wire it in with boundaries + arrows, or fold its code into the system it serves',
   'boundary-gap': 'declare the Thing on every edge the arrow crosses',
+  'undeclared-thing': "declare 'thing X { field: type }' for every Thing the map uses",
+  'empty-thing': 'give each thing its fields — the data shapes are half the design',
 }
 
 const GROUP_THRESHOLD = 6
