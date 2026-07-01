@@ -37,9 +37,10 @@ program
   .description('Install Topo into a repo: scaffold the manifest, skill, rule note, hook')
   .option('--dir <path>', 'repo directory')
   .option('--name <world>', 'world name (defaults to the repo folder name)')
+  .option('--map <file>', 'use an existing .topo file as the manifest (default: system.topo)')
   .option('--force', 'overwrite an existing install')
   .option('--no-hook', 'skip installing the pre-commit hook')
-  .action((o) => process.exit(runInit({ dir: o.dir, name: o.name, force: o.force, hook: o.hook })))
+  .action((o) => process.exit(runInit({ dir: o.dir, name: o.name, map: o.map, force: o.force, hook: o.hook })))
 
 program
   .command('view')

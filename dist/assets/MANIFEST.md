@@ -51,13 +51,18 @@ system Payments {
 }
 ```
 
+- `code` may appear on **any** node — `system`, `activity`, or `storage`. Leaves are
+  matched by the same rules below.
 - Globs are standard (`**`, `*`, `?`, `{a,b}`), matched from the repo root, honoring
-  `.gitignore` and the config `ignore` list.
-- **Most-specific wins.** When globs overlap, the file goes to the system whose glob
-  has the deeper static base (then the longer glob). So a parent can claim
-  `code "src/**"` and a child refine it with `code "src/payments/**"` — files under
-  `src/payments/` belong to the child. Two equally-specific rival globs are an
-  `ambiguous-ownership` error; make one more specific.
+  `.gitignore` and the config `ignore` list. **Paths with spaces work as-is inside
+  the quotes** — `code "Collection layer/**"` — no escaping needed.
+- **Most-specific wins, and nesting breaks ties.** When globs overlap, the file goes
+  to the system whose glob has the deeper static base (then the longer glob). So a
+  parent can claim `code "src/**"` and a child refine it with `code "src/payments/**"`.
+  If a parent **and its own child** point at the *same* glob, the **child wins** (it's
+  nested inside) — you don't have to strip the parent's line. Only two *unrelated*
+  systems claiming a file equally is an `ambiguous-ownership` error; make one glob
+  more specific.
 - A `gateway` (external) or a pure grouping `system` may own no code — that's fine, as
   long as every *file* ends up owned by some system.
 

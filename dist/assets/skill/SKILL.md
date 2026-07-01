@@ -27,7 +27,9 @@ lives in `system.topo`. The full grammar is in `MANIFEST.md` next to this file.
    - `region-changed` → the code under a system changed. Confirm the diagram still
      reflects it; update `system.topo` if the structure moved.
    - `dangling-code` → a glob matches nothing. Fix or remove it.
-   - `ambiguous-ownership` → two globs claim a file equally. Make one more specific.
+   - `ambiguous-ownership` → two *unrelated* systems claim a file equally. Make one
+     glob more specific. (A parent and its own child sharing a glob is fine — the
+     child wins automatically; this only fires for unrelated systems.)
    - `manifest-unapproved` → you edited the map (or there's no lock yet). Approve it.
 4. Run **`topo approve`** — records the current map + code as the approved snapshot
    (writes `system.topo.lock`). `topo check` is now green.

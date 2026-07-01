@@ -30,6 +30,27 @@ function moreSpecific(a: [number, number], b: [number, number]): number {
   return a[0] - b[0] || a[1] - b[1]
 }
 
+/** Depth of a system in the manifest tree (world root = 0). */
+function treeDepth(name: string, world: ToposWorld): number {
+  let d = 0
+  let p = world.systems[name]?.parent
+  while (p) {
+    d++
+    p = world.systems[p]?.parent
+  }
+  return d
+}
+
+/** Is `anc` an ancestor of `node` in the manifest tree? */
+function isAncestor(anc: string, node: string, world: ToposWorld): boolean {
+  let p = world.systems[node]?.parent
+  while (p) {
+    if (p === anc) return true
+    p = world.systems[p]?.parent
+  }
+  return false
+}
+
 interface Claim {
   system: string
   spec: [number, number]
@@ -71,9 +92,21 @@ export function resolveOwnership(root: string, config: ToposConfig, world: Topos
     }
     claims.sort((a, b) => moreSpecific(b.spec, a.spec))
     const top = claims[0].spec
-    const topSystems = [...new Set(claims.filter((c) => moreSpecific(c.spec, top) === 0).map((c) => c.system))]
-    if (topSystems.length > 1) ambiguous.push({ file, systems: topSystems.sort() })
-    const winner = topSystems.sort()[0] // deterministic even when ambiguous
+    const tied = [...new Set(claims.filter((c) => moreSpecific(c.spec, top) === 0).map((c) => c.system))]
+
+    let winner: string
+    if (tied.length === 1) {
+      winner = tied[0]
+    } else {
+      // Nesting breaks the tie: the deepest system in the manifest tree wins, as
+      // long as the other tied systems are its ancestors (a leaf naturally owns the
+      // code of the container it sits in). Genuinely unrelated rivals are ambiguous.
+      const deepest = [...tied].sort((a, b) => treeDepth(b, world) - treeDepth(a, world) || a.localeCompare(b))[0]
+      const unrelated = tied.filter((s) => s !== deepest && !isAncestor(s, deepest, world))
+      if (unrelated.length) ambiguous.push({ file, systems: [...tied].sort() })
+      winner = deepest
+    }
+
     owner.set(file, winner)
     const owned = bySystem.get(winner) ?? []
     owned.push(file)

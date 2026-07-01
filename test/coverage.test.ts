@@ -67,6 +67,16 @@ describe('resolveOwnership', () => {
     expect(own.uncovered).toEqual(['docs/b.ts'])
   })
 
+  it('breaks ties by nesting — a child wins over its parent for the same glob', () => {
+    const { root, config } = repo({ 'src/pay/charge.ts': 'a' })
+    const world = parseTopos(
+      `world W {\n  system App {\n    code "src/pay/**"\n    activity Charges { code "src/pay/**" }\n  }\n}\n`,
+    ).world!
+    const own = resolveOwnership(root, config, world)
+    expect(own.owner.get('src/pay/charge.ts')).toBe('Charges')
+    expect(own.ambiguous).toEqual([])
+  })
+
   it('flags equally-specific rival claims as ambiguous', () => {
     const { root, config } = repo({ 'src/x.ts': 'x' })
     const world = parseTopos(`world W {\n  system A { code "src/x.ts" }\n  system B { code "src/x.ts" }\n}\n`).world!

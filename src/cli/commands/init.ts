@@ -6,6 +6,7 @@
 import {
   existsSync,
   readFileSync,
+  readdirSync,
   writeFileSync,
   mkdirSync,
   copyFileSync,
@@ -22,6 +23,7 @@ const ASSETS = ASSETS_DIR
 export interface InitOptions {
   dir?: string
   name?: string
+  map?: string
   force?: boolean
   hook?: boolean
 }
@@ -47,7 +49,7 @@ export function runInit(opts: InitOptions): number {
   }
 
   const base = defaultConfig(root)
-  const config: ToposConfig = { ...base, world: opts.name ?? base.world }
+  const config: ToposConfig = { ...base, world: opts.name ?? base.world, map: opts.map ?? base.map }
   const log = (s: string) => console.log(`  ${s}`)
   console.log(`Installing Topo into ${root}`)
 
@@ -62,6 +64,14 @@ export function runInit(opts: InitOptions): number {
     log(`scaffolded ${config.map} (empty — author it by hand)`)
   } else {
     log(`${config.map} already exists (kept)`)
+  }
+  // point out any other .topo maps that could be adopted instead of authoring fresh
+  const otherMaps = readdirSync(root).filter((f) => f.endsWith('.topo') && f !== config.map)
+  if (otherMaps.length) {
+    log(
+      `note: found existing map${otherMaps.length > 1 ? 's' : ''} ${otherMaps.join(', ')} — to adopt one, ` +
+        `re-run 'topo init --force --map ${otherMaps[0]}' and add code "glob" lines to it`,
+    )
   }
 
   // 3. agent skill + manifest reference
@@ -104,6 +114,15 @@ export function runInit(opts: InitOptions): number {
       }
     } else {
       log(`no .git/hooks found — skipped the pre-commit hook`)
+      const nested = readdirSync(root, { withFileTypes: true })
+        .filter((d) => d.isDirectory() && existsSync(join(root, d.name, '.git')))
+        .map((d) => d.name)
+      if (nested.length) {
+        log(
+          `⚠ this dir isn't a git repo, but nested git repos exist (${nested.join(', ')}) — ` +
+            `'topo check' won't gate commits made inside them. Add 'topo check' to CI, or install the hook there manually.`,
+        )
+      }
     }
   }
 

@@ -9851,6 +9851,23 @@ function specificity(glob) {
 function moreSpecific(a, b) {
   return a[0] - b[0] || a[1] - b[1];
 }
+function treeDepth(name, world) {
+  let d = 0;
+  let p = world.systems[name]?.parent;
+  while (p) {
+    d++;
+    p = world.systems[p]?.parent;
+  }
+  return d;
+}
+function isAncestor(anc, node, world) {
+  let p = world.systems[node]?.parent;
+  while (p) {
+    if (p === anc) return true;
+    p = world.systems[p]?.parent;
+  }
+  return false;
+}
 function resolveOwnership(root, config, world) {
   const universe = listSourceFiles(root, config);
   const inUniverse = new Set(universe);
@@ -9883,9 +9900,16 @@ function resolveOwnership(root, config, world) {
     }
     claims.sort((a, b) => moreSpecific(b.spec, a.spec));
     const top = claims[0].spec;
-    const topSystems = [...new Set(claims.filter((c) => moreSpecific(c.spec, top) === 0).map((c) => c.system))];
-    if (topSystems.length > 1) ambiguous.push({ file, systems: topSystems.sort() });
-    const winner = topSystems.sort()[0];
+    const tied = [...new Set(claims.filter((c) => moreSpecific(c.spec, top) === 0).map((c) => c.system))];
+    let winner;
+    if (tied.length === 1) {
+      winner = tied[0];
+    } else {
+      const deepest = [...tied].sort((a, b) => treeDepth(b, world) - treeDepth(a, world) || a.localeCompare(b))[0];
+      const unrelated = tied.filter((s) => s !== deepest && !isAncestor(s, deepest, world));
+      if (unrelated.length) ambiguous.push({ file, systems: [...tied].sort() });
+      winner = deepest;
+    }
     owner.set(file, winner);
     const owned = bySystem.get(winner) ?? [];
     owned.push(file);
@@ -10082,23 +10106,61 @@ var LABEL = {
   "dangling-code": "dangling glob",
   "ambiguous-ownership": "ambiguous"
 };
-function renderReport(r) {
+var HINT = {
+  "manifest-unapproved": "run `topo approve`",
+  "region-changed": "review the code; update system.topo if the structure changed, then `topo approve`",
+  "uncovered-code": 'add each to a system\'s `code` glob, or to "ignore" in topo.config.json',
+  "dangling-code": "fix or remove these globs",
+  "ambiguous-ownership": "make one glob more specific, or nest one system inside the other (the child wins)"
+};
+var GROUP_THRESHOLD = 6;
+function groupKey(e) {
+  if (e.category === "uncovered-code" && e.location) return `${e.location.file.split("/")[0]}/\u2026`;
+  return e.system || e.detail;
+}
+function coverageLine(r) {
   const c = r.coverage;
-  const coverageLine = `coverage: ${c.covered}/${c.universe} source files owned by ${c.systemsWithCode} system${c.systemsWithCode === 1 ? "" : "s"}${c.uncovered ? `, ${c.uncovered} uncovered` : ""}`;
-  if (r.passed && r.entries.length === 0) {
-    return `\u2713 map is in sync  (${coverageLine})`;
+  return `${c.covered}/${c.universe} files owned by ${c.systemsWithCode} system${c.systemsWithCode === 1 ? "" : "s"}${c.uncovered ? `, ${c.uncovered} uncovered` : ""}`;
+}
+function renderReport(r) {
+  const cov = coverageLine(r);
+  if (r.passed && r.entries.length === 0) return `\u2713 map is in sync  (${cov})`;
+  if (r.entries.length > 0 && r.entries.every((e) => e.category === "manifest-unapproved")) {
+    return `\u25CF not approved yet \u2014 coverage is clean (${cov}). Run \`topo approve\` to lock it in.`;
   }
-  const lines = [];
   const counts = `${r.failures} to fix${r.warnings ? `, ${r.warnings} warning${r.warnings > 1 ? "s" : ""}` : ""}`;
-  lines.push(r.passed ? `\u2713 map is in sync  (${counts})` : `\u2717 map has drifted  (${counts})`);
+  const lines = [`\u2717 map has drifted \u2014 ${counts}  (${cov})`];
+  const byCat = /* @__PURE__ */ new Map();
   for (const e of r.entries) {
-    const loc = e.location ? `  (${e.location.file}${e.location.line ? `:${e.location.line}` : ""})` : "";
-    lines.push("");
-    lines.push(`  ${LABEL[e.category]}: ${e.detail}${loc}`);
-    lines.push(`    \u2192 ${e.suggestion}`);
+    const a = byCat.get(e.category) ?? [];
+    a.push(e);
+    byCat.set(e.category, a);
   }
-  lines.push("");
-  lines.push(`  ${coverageLine}`);
+  for (const [cat, entries] of byCat) {
+    lines.push("");
+    lines.push(`  ${LABEL[cat]} (${entries.length}):`);
+    if (entries.length > GROUP_THRESHOLD) {
+      const groups = /* @__PURE__ */ new Map();
+      for (const e of entries) {
+        const key = groupKey(e);
+        const g = groups.get(key) ?? { count: 0, example: e.location?.file };
+        g.count++;
+        groups.set(key, g);
+      }
+      const sorted = [...groups.entries()].sort((a, b) => b[1].count - a[1].count);
+      for (const [key, g] of sorted.slice(0, 12)) {
+        lines.push(`    ${g.count} \xD7 ${key}${g.example ? `   e.g. ${g.example}` : ""}`);
+      }
+      if (sorted.length > 12) lines.push(`    \u2026and ${sorted.length - 12} more`);
+      lines.push(`    \u2192 ${HINT[cat]}   (topo check --json for the full list)`);
+    } else {
+      for (const e of entries) {
+        const loc = e.location ? `  (${e.location.file}${e.location.line ? `:${e.location.line}` : ""})` : "";
+        lines.push(`    ${e.detail}${loc}`);
+        lines.push(`      \u2192 ${e.suggestion}`);
+      }
+    }
+  }
   return lines.join("\n");
 }
 
@@ -10214,6 +10276,7 @@ function runApprove(opts) {
 import {
   existsSync as existsSync7,
   readFileSync as readFileSync6,
+  readdirSync,
   writeFileSync as writeFileSync2,
   mkdirSync,
   copyFileSync,
@@ -10256,7 +10319,7 @@ function runInit(opts) {
     return 2;
   }
   const base = defaultConfig(root);
-  const config = { ...base, world: opts.name ?? base.world };
+  const config = { ...base, world: opts.name ?? base.world, map: opts.map ?? base.map };
   const log = (s) => console.log(`  ${s}`);
   console.log(`Installing Topo into ${root}`);
   writeFileSync2(cfgFile, JSON.stringify(config, null, 2) + "\n");
@@ -10267,6 +10330,12 @@ function runInit(opts) {
     log(`scaffolded ${config.map} (empty \u2014 author it by hand)`);
   } else {
     log(`${config.map} already exists (kept)`);
+  }
+  const otherMaps = readdirSync(root).filter((f) => f.endsWith(".topo") && f !== config.map);
+  if (otherMaps.length) {
+    log(
+      `note: found existing map${otherMaps.length > 1 ? "s" : ""} ${otherMaps.join(", ")} \u2014 to adopt one, re-run 'topo init --force --map ${otherMaps[0]}' and add code "glob" lines to it`
+    );
   }
   const skillDir = join5(root, ".claude", "skills", "topo");
   mkdirSync(skillDir, { recursive: true });
@@ -10309,6 +10378,12 @@ if command -v topo >/dev/null 2>&1; then topo check || exit 1; else npx --no-ins
       }
     } else {
       log(`no .git/hooks found \u2014 skipped the pre-commit hook`);
+      const nested = readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync7(join5(root, d.name, ".git"))).map((d) => d.name);
+      if (nested.length) {
+        log(
+          `\u26A0 this dir isn't a git repo, but nested git repos exist (${nested.join(", ")}) \u2014 'topo check' won't gate commits made inside them. Add 'topo check' to CI, or install the hook there manually.`
+        );
+      }
     }
   }
   console.log(`
@@ -12164,7 +12239,7 @@ var program2 = new Command();
 program2.name("topo").description("Topo Repo Toolchain \u2014 build & maintain an accurate system map").version("0.1.0");
 program2.command("check").description("Hash the declared code regions, diff against the lock, report drift (the hard blocker)").option("--dir <path>", "repo directory").option("--json", "machine-readable report").option("--strict", "promote warnings to failures").action((o) => process.exit(runCheck({ dir: o.dir, json: o.json, strict: o.strict })));
 program2.command("approve").argument("[systems...]", "re-lock only these systems (default: the whole repo)").description("Record the current code + map as approved \u2014 writes the lockfile, reaching green").option("--dir <path>", "repo directory").option("--confirm", "required under the 'human' approval policy").option("--json", "machine-readable summary").action((systems, o) => process.exit(runApprove({ dir: o.dir, systems, confirm: o.confirm, json: o.json })));
-program2.command("init").description("Install Topo into a repo: scaffold the manifest, skill, rule note, hook").option("--dir <path>", "repo directory").option("--name <world>", "world name (defaults to the repo folder name)").option("--force", "overwrite an existing install").option("--no-hook", "skip installing the pre-commit hook").action((o) => process.exit(runInit({ dir: o.dir, name: o.name, force: o.force, hook: o.hook })));
+program2.command("init").description("Install Topo into a repo: scaffold the manifest, skill, rule note, hook").option("--dir <path>", "repo directory").option("--name <world>", "world name (defaults to the repo folder name)").option("--map <file>", "use an existing .topo file as the manifest (default: system.topo)").option("--force", "overwrite an existing install").option("--no-hook", "skip installing the pre-commit hook").action((o) => process.exit(runInit({ dir: o.dir, name: o.name, map: o.map, force: o.force, hook: o.hook })));
 program2.command("view").description("Start the live viewer: watch the map and serve it in the browser").option("--dir <path>", "repo directory").option("--port <n>", "port", (v) => parseInt(v, 10)).option("--open", "open the browser").action((o) => runView({ dir: o.dir, port: o.port, open: o.open }));
 program2.parseAsync(process.argv).catch((err) => {
   console.error(`topo: ${err instanceof Error ? err.message : String(err)}`);
