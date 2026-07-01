@@ -27,6 +27,7 @@ const CATEGORY_ORDER: Record<DriftEntry['category'], number> = {
   'boundary-gap': 8,
   'undeclared-thing': 9,
   'empty-thing': 10,
+  'suspect-field-type': 11,
 }
 
 /** Directories (and their ancestors) that already contain an owned file. */

@@ -18,6 +18,7 @@ const LABEL: Record<DriftEntry['category'], string> = {
   'boundary-gap': 'design: boundary gap',
   'undeclared-thing': 'design: undeclared thing',
   'empty-thing': 'design: empty thing',
+  'suspect-field-type': 'design: field type',
 }
 
 const HINT: Record<DriftEntry['category'], string> = {
@@ -31,7 +32,8 @@ const HINT: Record<DriftEntry['category'], string> = {
   'disconnected-system': 'wire it in with boundaries + arrows, or fold its code into the system it serves',
   'boundary-gap': 'declare the Thing on every edge the arrow crosses',
   'undeclared-thing': "declare 'thing X { field: type }' for every Thing the map uses",
-  'empty-thing': 'give each thing its fields — the data shapes are half the design',
+  'empty-thing': 'give each thing its complete shape — every field the data actually carries',
+  'suspect-field-type': "use honest types: 'id' for identifiers, 'time' for timestamps, 'money' for prices, 'bool' for flags",
 }
 
 const GROUP_THRESHOLD = 6

@@ -18,6 +18,7 @@ export type DriftCategory =
   | 'unknown-endpoint' // an arrow to/from an undeclared system name
   | 'undeclared-thing' // a Thing used on boundaries/arrows with no `thing` declaration
   | 'empty-thing' // a `thing` declared with no fields — a shape with no shape
+  | 'suspect-field-type' // a field whose name implies id/time/money/bool but is typed text/int/number
 
 export interface DriftEntry {
   category: DriftCategory

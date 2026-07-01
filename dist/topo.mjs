@@ -10021,7 +10021,32 @@ function designLints(world) {
         system: "",
         detail: `thing ${t.name} { } has no fields \u2014 a shape with no shape.`,
         location: null,
-        suggestion: `Give ${t.name} its fields (text int number money bool id time [T]) \u2014 what IS this data?`
+        suggestion: `Give ${t.name} its complete shape (text int number money bool id time [T]) \u2014 every field the data actually carries.`
+      });
+    }
+  }
+  const LAZY = /* @__PURE__ */ new Set(["text", "int", "number"]);
+  const expectType = (field) => {
+    const f = field.toLowerCase();
+    if (f === "id" || f.endsWith("_id")) return "id";
+    if (f.endsWith("_at") || f.endsWith("_date") || f.endsWith("_time") || f === "date" || f === "timestamp") return "time";
+    if (f === "price" || f === "amount" || f.endsWith("_amount") || f.endsWith("_price")) return "money";
+    if (f.startsWith("is_") || f.startsWith("has_") || f === "enabled" || f === "active") return "bool";
+    return null;
+  };
+  for (const t of Object.values(world.things)) {
+    const suspects = [];
+    for (const f of t.fields) {
+      const want = expectType(f.name);
+      if (want && want !== f.type && LAZY.has(f.type)) suspects.push(`${f.name}: ${f.type} \u2192 ${want}`);
+    }
+    if (suspects.length) {
+      entries.push({
+        category: "suspect-field-type",
+        system: "",
+        detail: `thing ${t.name} has lazily-typed fields: ${suspects.join(", ")}.`,
+        location: null,
+        suggestion: `Use the honest type \u2014 'id' for identifiers, 'time' for timestamps, 'money' for prices, 'bool' for flags.`
       });
     }
   }
@@ -10133,7 +10158,8 @@ var CATEGORY_ORDER = {
   "disconnected-system": 7,
   "boundary-gap": 8,
   "undeclared-thing": 9,
-  "empty-thing": 10
+  "empty-thing": 10,
+  "suspect-field-type": 11
 };
 function mappedDirs(ownedFiles) {
   const dirs = /* @__PURE__ */ new Set();
@@ -10270,7 +10296,8 @@ var LABEL = {
   "disconnected-system": "design: disconnected",
   "boundary-gap": "design: boundary gap",
   "undeclared-thing": "design: undeclared thing",
-  "empty-thing": "design: empty thing"
+  "empty-thing": "design: empty thing",
+  "suspect-field-type": "design: field type"
 };
 var HINT = {
   "manifest-unapproved": "run `topo approve`",
@@ -10283,7 +10310,8 @@ var HINT = {
   "disconnected-system": "wire it in with boundaries + arrows, or fold its code into the system it serves",
   "boundary-gap": "declare the Thing on every edge the arrow crosses",
   "undeclared-thing": "declare 'thing X { field: type }' for every Thing the map uses",
-  "empty-thing": "give each thing its fields \u2014 the data shapes are half the design"
+  "empty-thing": "give each thing its complete shape \u2014 every field the data actually carries",
+  "suspect-field-type": "use honest types: 'id' for identifiers, 'time' for timestamps, 'money' for prices, 'bool' for flags"
 };
 var GROUP_THRESHOLD = 6;
 function groupKey(e) {

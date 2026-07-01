@@ -70,7 +70,37 @@ export function designLints(world: ToposWorld): DriftEntry[] {
         system: '',
         detail: `thing ${t.name} { } has no fields — a shape with no shape.`,
         location: null,
-        suggestion: `Give ${t.name} its fields (text int number money bool id time [T]) — what IS this data?`,
+        suggestion: `Give ${t.name} its complete shape (text int number money bool id time [T]) — every field the data actually carries.`,
+      })
+    }
+  }
+
+  // -- suspect-field-type: a field whose NAME implies a richer type than declared.
+  // Catches the lazy-typing pattern (everything as text/int) without fighting legit
+  // cases: only fires when the name convention is unambiguous and the declared type
+  // is a weaker scalar. Calibrated to zero on the house-style exemplars.
+  const LAZY = new Set(['text', 'int', 'number'])
+  const expectType = (field: string): string | null => {
+    const f = field.toLowerCase()
+    if (f === 'id' || f.endsWith('_id')) return 'id'
+    if (f.endsWith('_at') || f.endsWith('_date') || f.endsWith('_time') || f === 'date' || f === 'timestamp') return 'time'
+    if (f === 'price' || f === 'amount' || f.endsWith('_amount') || f.endsWith('_price')) return 'money'
+    if (f.startsWith('is_') || f.startsWith('has_') || f === 'enabled' || f === 'active') return 'bool'
+    return null
+  }
+  for (const t of Object.values(world.things)) {
+    const suspects: string[] = []
+    for (const f of t.fields) {
+      const want = expectType(f.name)
+      if (want && want !== f.type && LAZY.has(f.type)) suspects.push(`${f.name}: ${f.type} → ${want}`)
+    }
+    if (suspects.length) {
+      entries.push({
+        category: 'suspect-field-type',
+        system: '',
+        detail: `thing ${t.name} has lazily-typed fields: ${suspects.join(', ')}.`,
+        location: null,
+        suggestion: `Use the honest type — 'id' for identifiers, 'time' for timestamps, 'money' for prices, 'bool' for flags.`,
       })
     }
   }

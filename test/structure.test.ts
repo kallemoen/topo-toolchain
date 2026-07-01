@@ -159,4 +159,31 @@ describe('designLints', () => {
     expect(found).toHaveLength(1)
     expect(found[0].detail).toContain('thing X { }')
   })
+
+  it('flags lazily-typed fields whose names imply a richer type', () => {
+    const src = `thing Listing {
+      listing_id: text
+      price_amount: int
+      scraped_at: text
+      is_active: text
+      country_code: text
+      title: text
+    }
+    world W { system A { out Listing } }`
+    const found = lints(src).filter((e) => e.category === 'suspect-field-type')
+    expect(found).toHaveLength(1)
+    expect(found[0].detail).toContain('listing_id: text → id')
+    expect(found[0].detail).toContain('price_amount: int → money')
+    expect(found[0].detail).toContain('scraped_at: text → time')
+    expect(found[0].detail).toContain('is_active: text → bool')
+    // honest fields don't fire: country_code/title are legitimately text
+    expect(found[0].detail).not.toContain('country_code')
+    expect(found[0].detail).not.toContain('title')
+  })
+
+  it('does not flag honestly-typed fields', () => {
+    const src = `thing Listing { listing_id: id  price_amount: money  scraped_at: time  is_active: bool }
+    world W { system A { out Listing } }`
+    expect(cats(src)).not.toContain('suspect-field-type')
+  })
 })

@@ -44,21 +44,27 @@ thing <Name> { field: Type … }         // a data shape — declare one per Thi
 
 ## Things — the data shapes are half the map
 
-Every Thing that appears on a boundary or an arrow gets a `thing` declaration **with
-fields**, at file scope (above the world). The boxes say who does the work; the
-Things say what the work *is* — a map whose data is unshaped is only half designed.
+Every Thing that appears on a boundary or an arrow gets a `thing` declaration with
+its **complete shape**, at file scope (above the world). The boxes say who does the
+work; the Things say what the work *is* — a map whose data is unshaped is only half
+designed.
 
 ```
-thing Order   { items: [text]  table: int }
-thing Payment { amount: money  method: text }
+thing Payment { amount: money  method: text  paid_at: time  order_id: id }
 ```
 
-- Field types: `text` `int` `number` `money` `bool` `id` `time`, and `[T]` for a
-  list (e.g. `[text]`, `[Listing]`). Fields may reference other Things by name.
-- Keep 2–6 fields that capture the *identity* of the data — what a reader needs to
-  understand the flow, not the full production schema.
+- **Complete means complete.** Declare every field the data actually carries. If the
+  code has a contract for it (a TS interface, a schema, a table), mirror it fully —
+  don't summarize it down to a few representative fields.
+- **Types must be honest.** `text` `int` `number` `money` `bool` `id` `time`, and
+  `[T]` for a list (e.g. `[text]`, `[Listing]`); fields may reference other Things
+  by name. Identifiers are `id` (not text), timestamps are `time` (not text),
+  prices/amounts are `money` (not int), flags are `bool`. Defaulting everything to
+  `text` is a design smell the check will call out.
 - `topo check` warns on a Thing used with no declaration (`design: undeclared
-  thing`) and on a declared shape with no fields (`design: empty thing`).
+  thing`), a declared shape with no fields (`design: empty thing`), and fields whose
+  names imply a richer type than declared (`design: field type` — e.g.
+  `config_id: text`, `price_amount: int`, `scraped_at: text`).
 
 ## `code` — binding systems to files
 
