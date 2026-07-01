@@ -20,6 +20,7 @@ function canon(w: ToposWorld) {
         ins: [...s.ins].sort(),
         outs: [...s.outs].sort(),
         holds: [...s.holds].sort(),
+        codePaths: [...s.codePaths].sort(),
         desc: s.desc ?? null,
       }))
       .sort((a, b) => a.name.localeCompare(b.name)),
@@ -54,6 +55,16 @@ describe('serializeTopos — round-trips through parseTopos', () => {
     const text = serializeTopos(parseTopos(src).world!)
     expect(text).toContain('thing T { }')
     expect(text).toContain('// does a thing')
+    roundTrips(src)
+  })
+
+  it('parses, emits, and round-trips code declarations', () => {
+    const src = `world W {\n  system Payments {\n    code "src/payments/**"\n    code "src/api/charges.ts"\n    activity Charges { }\n    Charges --( Charge )--> Ledger\n  }\n}\n`
+    const w = parseTopos(src).world!
+    expect(w.systems.Payments.codePaths).toEqual(['src/payments/**', 'src/api/charges.ts'])
+    const text = serializeTopos(w)
+    expect(text).toContain('code "src/payments/**"')
+    expect(text).toContain('code "src/api/charges.ts"')
     roundTrips(src)
   })
 })

@@ -1,22 +1,22 @@
 ## Topo system map
 
-This repo maintains a Topo system map (`system.topo`) generated from `//@topo`
-markers embedded in the code. Markers are the structural source of truth; the map
-is regenerated from them.
+This repo keeps a hand-authored Topo system map, `system.topo`: the systems, the
+arrows between them, and — via `code "glob"` lines — which code each system owns.
+Topo hashes the owned code into `system.topo.lock` and `topo check` blocks on drift.
+**Structure lives only in `system.topo`; never add `//@topo` comments to source code.**
 
 **Binding rule:** after any change that adds, removes, renames, or rewires a
-system / activity / storage / gateway, you MUST:
+system / activity / storage / gateway — or moves the code a system owns — you MUST:
 
-1. Update the `//@topo` markers in the files you changed.
-2. Run `topo sync` — regenerates the live `system.topo` from the markers.
-3. Run `topo check` — this is a **hard blocker** (exit 0 = green). If it's red,
-   read each entry, fix the markers, and repeat from step 2. Do not finish while
-   it is red.
-4. Commit the code, markers, and `system.topo` together.
+1. Update `system.topo` to match reality: the systems, the `--( )-->` arrows, and
+   each system's `code "glob"` so every source file stays owned.
+2. Run `topo check` — a **hard blocker** (exit 0 = green). Fix every entry it lists.
+3. Run `topo approve` — records the approved snapshot (`system.topo.lock`).
+4. Commit `system.topo`, `system.topo.lock`, and the code together.
 
-`topo propose` (writes a draft) + `topo approve` (a human promotes it) are an
-**optional review gate** for changes you want eyeballed before they land — not the
-normal loop, and you must never run `topo approve` yourself.
+If `topo.config.json` sets `policy.approval` to `"human"`, leave `topo approve` to a
+person (they run `topo approve --confirm` or approve in `topo view`); otherwise the
+default is that you run it yourself.
 
-See `.claude/skills/topo-sync/SKILL.md` for the marker syntax and the full loop,
-and `.claude/skills/topo-sync/MARKERS.md` for the complete marker reference.
+See `.claude/skills/topo/SKILL.md` for the loop and `.claude/skills/topo/MANIFEST.md`
+for the full grammar.

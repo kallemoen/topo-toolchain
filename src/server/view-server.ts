@@ -1,18 +1,20 @@
 // view-server.ts — the `topo view` server.
 //
-// Serves the prebuilt viewer bundle, streams the live map + drift report + draft
-// over SSE, re-runs scan+compare in-process on every file change, and exposes
-// approve/reject. Node's built-in http only — no framework.
+// Serves the prebuilt viewer bundle, streams the live map + coverage/drift report
+// over SSE, re-runs the coverage check in-process on every file change, and exposes
+// approve. Node's built-in http only — no framework.
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, extname, resolve } from 'node:path'
 import type { ToposConfig } from '../core/config'
 import { ASSETS_DIR } from '../core/assets'
-import { mapPath, draftPath } from '../core/paths'
-import { scanClaims } from '../core/markers/scan'
+import { mapPath } from '../core/paths'
 import { parseTopos } from '../core/topos'
-import { compare } from '../core/compare/compare'
+import { buildSnapshot } from '../core/coverage/snapshot'
+import { readLock } from '../core/coverage/lock'
+import { checkSnapshot } from '../core/coverage/check'
+import type { DriftReport } from '../core/types'
 import { watchRepo } from './watch'
 import { runApprove } from '../cli/commands/approve'
 
@@ -30,11 +32,7 @@ const MIME: Record<string, string> = {
   '.ico': 'image/x-icon',
 }
 
-type Payload =
-  | { type: 'map'; source: string }
-  | { type: 'report'; report: ReturnType<typeof compare> }
-  | { type: 'draft'; base: string; draftSource: string }
-  | { type: 'draft'; cleared: true }
+type Payload = { type: 'map'; source: string } | { type: 'report'; report: DriftReport | null }
 
 export interface ViewServer {
   url: string
@@ -52,15 +50,15 @@ export function startViewServer(root: string, config: ToposConfig, port: number)
     const mp = mapPath(root, config)
     return existsSync(mp) ? readFileSync(mp, 'utf8') : ''
   }
-  const computeReport = () => {
-    const { claims, filesScanned } = scanClaims(root, config)
+  const computeReport = (): DriftReport | null => {
     const mp = mapPath(root, config)
-    const world = existsSync(mp) ? parseTopos(readFileSync(mp, 'utf8')).world : null
-    return compare(claims, world ?? null, { strict: config.check.strict, filesScanned })
-  }
-  const draftPayload = (): Payload => {
-    const dp = draftPath(root, config)
-    return existsSync(dp) ? { type: 'draft', base: '', draftSource: readFileSync(dp, 'utf8') } : { type: 'draft', cleared: true }
+    if (!existsSync(mp)) return null
+    const text = readFileSync(mp, 'utf8')
+    const { world } = parseTopos(text)
+    if (!world) return null
+    const snapshot = buildSnapshot(root, config, world, text)
+    const lock = readLock(root, config)
+    return checkSnapshot(config, world, snapshot, lock, { strict: config.check.strict })
   }
 
   const serveIndex = (res: ServerResponse) => {
@@ -90,7 +88,6 @@ export function startViewServer(root: string, config: ToposConfig, port: number)
       clients.add(res)
       send(res, { type: 'map', source: readMap() })
       send(res, { type: 'report', report: computeReport() })
-      send(res, draftPayload())
       req.on('close', () => clients.delete(res))
       return
     }
@@ -103,12 +100,7 @@ export function startViewServer(root: string, config: ToposConfig, port: number)
       return res.end(JSON.stringify(computeReport()))
     }
     if (urlPath === '/approve' && req.method === 'POST') {
-      runApprove({ dir: root })
-      res.writeHead(200)
-      return res.end('ok')
-    }
-    if (urlPath === '/reject' && req.method === 'POST') {
-      runApprove({ dir: root, reject: true })
+      runApprove({ dir: root, confirm: true }) // approving in the viewer is a human action
       res.writeHead(200)
       return res.end('ok')
     }
@@ -118,7 +110,6 @@ export function startViewServer(root: string, config: ToposConfig, port: number)
   const watcher = watchRepo(root, () => {
     broadcast({ type: 'map', source: readMap() })
     broadcast({ type: 'report', report: computeReport() })
-    broadcast(draftPayload())
   })
 
   server.listen(port)

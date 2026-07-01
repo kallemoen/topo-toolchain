@@ -1152,7 +1152,7 @@ var require_command = __commonJS({
     var childProcess = __require("node:child_process");
     var path = __require("node:path");
     var fs = __require("node:fs");
-    var process3 = __require("node:process");
+    var process2 = __require("node:process");
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
     var { Help: Help2, stripColor } = require_help();
@@ -1199,13 +1199,13 @@ var require_command = __commonJS({
         this._showSuggestionAfterError = true;
         this._savedState = null;
         this._outputConfiguration = {
-          writeOut: (str) => process3.stdout.write(str),
-          writeErr: (str) => process3.stderr.write(str),
+          writeOut: (str) => process2.stdout.write(str),
+          writeErr: (str) => process2.stderr.write(str),
           outputError: (str, write) => write(str),
-          getOutHelpWidth: () => process3.stdout.isTTY ? process3.stdout.columns : void 0,
-          getErrHelpWidth: () => process3.stderr.isTTY ? process3.stderr.columns : void 0,
-          getOutHasColors: () => useColor() ?? (process3.stdout.isTTY && process3.stdout.hasColors?.()),
-          getErrHasColors: () => useColor() ?? (process3.stderr.isTTY && process3.stderr.hasColors?.()),
+          getOutHelpWidth: () => process2.stdout.isTTY ? process2.stdout.columns : void 0,
+          getErrHelpWidth: () => process2.stderr.isTTY ? process2.stderr.columns : void 0,
+          getOutHasColors: () => useColor() ?? (process2.stdout.isTTY && process2.stdout.hasColors?.()),
+          getErrHasColors: () => useColor() ?? (process2.stderr.isTTY && process2.stderr.hasColors?.()),
           stripColor: (str) => stripColor(str)
         };
         this._hidden = false;
@@ -1588,7 +1588,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (this._exitCallback) {
           this._exitCallback(new CommanderError2(exitCode, code, message));
         }
-        process3.exit(exitCode);
+        process2.exit(exitCode);
       }
       /**
        * Register callback `fn` for the command.
@@ -1986,16 +1986,16 @@ Expecting one of '${allowedValues.join("', '")}'`);
         }
         parseOptions = parseOptions || {};
         if (argv === void 0 && parseOptions.from === void 0) {
-          if (process3.versions?.electron) {
+          if (process2.versions?.electron) {
             parseOptions.from = "electron";
           }
-          const execArgv = process3.execArgv ?? [];
+          const execArgv = process2.execArgv ?? [];
           if (execArgv.includes("-e") || execArgv.includes("--eval") || execArgv.includes("-p") || execArgv.includes("--print")) {
             parseOptions.from = "eval";
           }
         }
         if (argv === void 0) {
-          argv = process3.argv;
+          argv = process2.argv;
         }
         this.rawArgs = argv.slice();
         let userArgs;
@@ -2006,7 +2006,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
             userArgs = argv.slice(2);
             break;
           case "electron":
-            if (process3.defaultApp) {
+            if (process2.defaultApp) {
               this._scriptPath = argv[1];
               userArgs = argv.slice(2);
             } else {
@@ -2193,11 +2193,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         }
         launchWithNode = sourceExt.includes(path.extname(executableFile));
         let proc;
-        if (process3.platform !== "win32") {
+        if (process2.platform !== "win32") {
           if (launchWithNode) {
             args.unshift(executableFile);
-            args = incrementNodeInspectorPort(process3.execArgv).concat(args);
-            proc = childProcess.spawn(process3.argv[0], args, { stdio: "inherit" });
+            args = incrementNodeInspectorPort(process2.execArgv).concat(args);
+            proc = childProcess.spawn(process2.argv[0], args, { stdio: "inherit" });
           } else {
             proc = childProcess.spawn(executableFile, args, { stdio: "inherit" });
           }
@@ -2208,13 +2208,13 @@ Expecting one of '${allowedValues.join("', '")}'`);
             subcommand._name
           );
           args.unshift(executableFile);
-          args = incrementNodeInspectorPort(process3.execArgv).concat(args);
-          proc = childProcess.spawn(process3.execPath, args, { stdio: "inherit" });
+          args = incrementNodeInspectorPort(process2.execArgv).concat(args);
+          proc = childProcess.spawn(process2.execPath, args, { stdio: "inherit" });
         }
         if (!proc.killed) {
           const signals = ["SIGUSR1", "SIGUSR2", "SIGTERM", "SIGINT", "SIGHUP"];
           signals.forEach((signal) => {
-            process3.on(signal, () => {
+            process2.on(signal, () => {
               if (proc.killed === false && proc.exitCode === null) {
                 proc.kill(signal);
               }
@@ -2225,7 +2225,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         proc.on("close", (code) => {
           code = code ?? 1;
           if (!exitCallback) {
-            process3.exit(code);
+            process2.exit(code);
           } else {
             exitCallback(
               new CommanderError2(
@@ -2247,7 +2247,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
             throw new Error(`'${executableFile}' not executable`);
           }
           if (!exitCallback) {
-            process3.exit(1);
+            process2.exit(1);
           } else {
             const wrappedError = new CommanderError2(
               1,
@@ -2742,13 +2742,13 @@ Expecting one of '${allowedValues.join("', '")}'`);
        */
       _parseOptionsEnv() {
         this.options.forEach((option) => {
-          if (option.envVar && option.envVar in process3.env) {
+          if (option.envVar && option.envVar in process2.env) {
             const optionKey = option.attributeName();
             if (this.getOptionValue(optionKey) === void 0 || ["default", "config", "env"].includes(
               this.getOptionValueSource(optionKey)
             )) {
               if (option.required || option.optional) {
-                this.emit(`optionEnv:${option.name()}`, process3.env[option.envVar]);
+                this.emit(`optionEnv:${option.name()}`, process2.env[option.envVar]);
               } else {
                 this.emit(`optionEnv:${option.name()}`);
               }
@@ -3203,7 +3203,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        */
       help(contextOptions) {
         this.outputHelp(contextOptions);
-        let exitCode = Number(process3.exitCode ?? 0);
+        let exitCode = Number(process2.exitCode ?? 0);
         if (exitCode === 0 && contextOptions && typeof contextOptions !== "function" && contextOptions.error) {
           exitCode = 1;
         }
@@ -3293,9 +3293,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
       });
     }
     function useColor() {
-      if (process3.env.NO_COLOR || process3.env.FORCE_COLOR === "0" || process3.env.FORCE_COLOR === "false")
+      if (process2.env.NO_COLOR || process2.env.FORCE_COLOR === "0" || process2.env.FORCE_COLOR === "false")
         return false;
-      if (process3.env.FORCE_COLOR || process3.env.CLICOLOR_FORCE !== void 0)
+      if (process2.env.FORCE_COLOR || process2.env.CLICOLOR_FORCE !== void 0)
         return true;
       return void 0;
     }
@@ -3397,9 +3397,9 @@ var require_path = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.convertPosixPathToPattern = exports.convertWindowsPathToPattern = exports.convertPathToPattern = exports.escapePosixPath = exports.escapeWindowsPath = exports.escape = exports.removeLeadingDotSegment = exports.makeAbsolute = exports.unixify = void 0;
-    var os2 = __require("os");
+    var os = __require("os");
     var path = __require("path");
-    var IS_WINDOWS_PLATFORM = os2.platform() === "win32";
+    var IS_WINDOWS_PLATFORM = os.platform() === "win32";
     var LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2;
     var POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
     var WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()[\]{}]|^!|[!+@](?=\())/g;
@@ -3840,7 +3840,7 @@ var require_to_regex_range = __commonJS({
         stop = countZeros(max + 1, zeros) - 1;
       }
       stops = [...stops];
-      stops.sort(compare2);
+      stops.sort(compare);
       return stops;
     }
     function rangeToPattern(start, stop, options) {
@@ -3912,7 +3912,7 @@ var require_to_regex_range = __commonJS({
       for (let i = 0; i < a.length; i++) arr.push([a[i], b[i]]);
       return arr;
     }
-    function compare2(a, b) {
+    function compare(a, b) {
       return a > b ? 1 : b > a ? -1 : 0;
     }
     function contains(arr, key, val) {
@@ -8917,8 +8917,8 @@ var require_settings4 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DEFAULT_FILE_SYSTEM_ADAPTER = void 0;
     var fs = __require("fs");
-    var os2 = __require("os");
-    var CPU_COUNT = Math.max(os2.cpus().length, 1);
+    var os = __require("os");
+    var CPU_COUNT = Math.max(os.cpus().length, 1);
     exports.DEFAULT_FILE_SYSTEM_ADAPTER = {
       lstat: fs.lstat,
       lstatSync: fs.lstatSync,
@@ -9546,21 +9546,25 @@ var {
 } = import_index.default;
 
 // src/cli/commands/check.ts
-import { readFileSync as readFileSync3, existsSync as existsSync3 } from "node:fs";
+import { readFileSync as readFileSync4, existsSync as existsSync4 } from "node:fs";
 
 // src/core/config.ts
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, basename, resolve } from "node:path";
 var CONFIG_FILE = "topo.config.json";
+var DEFAULT_INCLUDE = [
+  "**/*.{ts,tsx,js,jsx,mjs,cjs,py,go,rs,rb,java,kt,kts,php,cs,swift,scala,c,cc,cpp,h,hh,hpp,m,mm,vue,svelte,sql,sh}"
+];
 function defaultConfig(dir) {
   return {
     world: titleCase(basename(resolve(dir))),
     map: "system.topo",
-    draft: "system.draft.topo",
-    include: ["**/*"],
+    lock: "system.topo.lock",
+    include: DEFAULT_INCLUDE,
     ignore: ["dist/**", "build/**", "**/*.min.*"],
     viewer: { port: 4517 },
-    check: { strict: false }
+    check: { strict: false },
+    policy: { coverage: "strict", approval: "agent", onRegionChange: "block" }
   };
 }
 function titleCase(s) {
@@ -9588,7 +9592,8 @@ function loadConfig(dir) {
         ...base,
         ...parsed,
         viewer: { ...base.viewer, ...parsed.viewer ?? {} },
-        check: { ...base.check, ...parsed.check ?? {} }
+        check: { ...base.check, ...parsed.check ?? {} },
+        policy: { ...base.policy, ...parsed.policy ?? {} }
       }
     };
   } catch {
@@ -9601,215 +9606,15 @@ import { join as join2 } from "node:path";
 function mapPath(root, cfg) {
   return join2(root, cfg.map);
 }
-function draftPath(root, cfg) {
-  return join2(root, cfg.draft);
-}
-function draftMetaPath(root, cfg) {
-  return `${draftPath(root, cfg)}.meta.json`;
-}
-
-// src/core/markers/scan.ts
-var import_fast_glob = __toESM(require_out4(), 1);
-var import_ignore = __toESM(require_ignore(), 1);
-import { readFileSync as readFileSync2, existsSync as existsSync2 } from "node:fs";
-import { join as join3 } from "node:path";
-
-// src/core/markers/grammar.ts
-var SENTINEL = /(?:\/\/|#|--|;|%|<!--|\/\*|\*)\s*@topo\b[ \t]*(.*)$/;
-var SYSTEM_RE = /^(system|activity|storage|gateway)\s+([A-Za-z_]\w*)\b(.*)$/;
-var BOUND_RE = /^(in|out|holds)\s+\[?([A-Za-z_]\w*)\]?\s*$/;
-var KINDS = /* @__PURE__ */ new Set(["system", "activity", "storage", "gateway"]);
-function cleanPayload(raw) {
-  return raw.replace(/\s*(?:-->|\*\/)\s*$/, "").trim();
-}
-function parseOpts(rest) {
-  let parent = null;
-  let kindOverride = null;
-  let open2 = false;
-  for (const tok of rest.trim().split(/\s+/).filter(Boolean)) {
-    if (tok === "open") open2 = true;
-    else if (tok.startsWith("parent=")) parent = tok.slice(7) || null;
-    else if (tok.startsWith("kind=")) {
-      const k = tok.slice(5);
-      if (KINDS.has(k)) kindOverride = k;
-    }
-  }
-  return { parent, kindOverride, open: open2 };
-}
-function classifyLine(rawLine) {
-  const m = SENTINEL.exec(rawLine);
-  if (!m) return null;
-  const payload = cleanPayload(m[1]);
-  if (!payload) return null;
-  const sys = SYSTEM_RE.exec(payload);
-  if (sys) {
-    const keyword = sys[1];
-    const name = sys[2];
-    const { parent, kindOverride, open: open2 } = parseOpts(sys[3] ?? "");
-    let kind = kindOverride ?? keyword;
-    if (open2) kind = "system";
-    return { type: "system", kind, name, parent };
-  }
-  const bound = BOUND_RE.exec(payload);
-  if (bound) {
-    return { type: "boundary", dir: bound[1], thing: bound[2] };
-  }
-  return null;
-}
-
-// src/core/markers/claims.ts
-function dedup(arr) {
-  return [...new Set(arr)];
-}
-function claimsForFile(file, lines) {
-  const claims = [];
-  let current = null;
-  lines.forEach((text, idx) => {
-    const m = classifyLine(text);
-    if (!m) return;
-    if (m.type === "system") {
-      current = {
-        system: m.name,
-        kind: m.kind,
-        open: m.kind === "system",
-        parent: m.parent,
-        ins: [],
-        outs: [],
-        holds: [],
-        loc: { file, line: idx + 1 },
-        extraLocs: []
-      };
-      claims.push(current);
-    } else if (current) {
-      if (m.dir === "in") current.ins.push(m.thing);
-      else if (m.dir === "out") current.outs.push(m.thing);
-      else current.holds.push(m.thing);
-    }
-  });
-  for (const c of claims) {
-    c.ins = dedup(c.ins);
-    c.outs = dedup(c.outs);
-    c.holds = dedup(c.holds);
-    if (c.holds.length > 0 && c.kind !== "storage") {
-      c.kind = "storage";
-      c.open = false;
-    }
-  }
-  return claims;
-}
-function mergeClaims(perFile) {
-  const sorted = [...perFile].sort(
-    (a, b) => a.loc.file.localeCompare(b.loc.file) || a.loc.line - b.loc.line
-  );
-  const bySystem = /* @__PURE__ */ new Map();
-  for (const c of sorted) {
-    const existing = bySystem.get(c.system);
-    if (!existing) {
-      bySystem.set(c.system, { ...c, ins: [...c.ins], outs: [...c.outs], holds: [...c.holds], extraLocs: [] });
-      continue;
-    }
-    existing.extraLocs.push(c.loc);
-    existing.ins = dedup([...existing.ins, ...c.ins]);
-    existing.outs = dedup([...existing.outs, ...c.outs]);
-    existing.holds = dedup([...existing.holds, ...c.holds]);
-    if (!existing.parent && c.parent) existing.parent = c.parent;
-    if (existing.holds.length > 0) {
-      existing.kind = "storage";
-      existing.open = false;
-    }
-  }
-  return [...bySystem.values()].sort((a, b) => a.system.localeCompare(b.system));
-}
-
-// src/core/markers/scan.ts
-var BUILTIN_DENY = [
-  "**/node_modules/**",
-  "**/.git/**",
-  "**/.topo/**",
-  "**/dist/**",
-  "**/build/**",
-  "**/*.lock",
-  "**/*-lock.json"
-];
-var BINARY_EXT = /* @__PURE__ */ new Set([
-  "png",
-  "jpg",
-  "jpeg",
-  "gif",
-  "webp",
-  "svg",
-  "ico",
-  "pdf",
-  "zip",
-  "gz",
-  "tar",
-  "woff",
-  "woff2",
-  "ttf",
-  "eot",
-  "mp4",
-  "mov",
-  "mp3",
-  "wav",
-  "bin",
-  "exe",
-  "wasm",
-  "class",
-  "o",
-  "a",
-  "so",
-  "dylib",
-  "dll",
-  "jpg",
-  "lockb"
-]);
-function isBinaryExt(path) {
-  const dot = path.lastIndexOf(".");
-  if (dot < 0) return false;
-  return BINARY_EXT.has(path.slice(dot + 1).toLowerCase());
-}
-function looksBinary(text) {
-  const n = Math.min(text.length, 8192);
-  for (let i = 0; i < n; i++) if (text.charCodeAt(i) === 0) return true;
-  return false;
-}
-function scanClaims(root, config) {
-  const ig = (0, import_ignore.default)();
-  const gitignore = join3(root, ".gitignore");
-  if (existsSync2(gitignore)) ig.add(readFileSync2(gitignore, "utf8"));
-  if (config.ignore.length) ig.add(config.ignore);
-  const entries = import_fast_glob.default.sync(config.include, {
-    cwd: root,
-    dot: false,
-    onlyFiles: true,
-    followSymbolicLinks: false,
-    ignore: BUILTIN_DENY
-  });
-  const files = entries.filter((p) => !isBinaryExt(p) && !ig.ignores(p)).sort();
-  const all = [];
-  let scanned = 0;
-  for (const rel of files) {
-    let text;
-    try {
-      text = readFileSync2(join3(root, rel), "utf8");
-    } catch {
-      continue;
-    }
-    if (looksBinary(text)) continue;
-    scanned++;
-    if (!text.includes("@topo")) continue;
-    const fileClaims = claimsForFile(rel, text.split("\n"));
-    if (fileClaims.length) all.push(...fileClaims);
-  }
-  return { claims: mergeClaims(all), filesScanned: scanned };
+function lockPath(root, cfg) {
+  return join2(root, cfg.lock);
 }
 
 // src/core/topos.ts
 var KIND_KEYWORDS = /* @__PURE__ */ new Set(["world", "system", "activity", "storage", "gateway"]);
 function tokenize(src) {
-  const noComments = src.replace(/\/\/[^\n]*/g, "");
-  const re = /--\(|\)-->|[{}[\]:]|[A-Za-z_][A-Za-z0-9_]*/g;
-  return noComments.match(re) ?? [];
+  const re = /"[^"]*"|\/\/[^\n]*|--\(|\)-->|[{}[\]:]|[A-Za-z_][A-Za-z0-9_]*/g;
+  return (src.match(re) ?? []).filter((t) => !t.startsWith("//"));
 }
 function captureDescriptions(src) {
   const desc = {};
@@ -9839,6 +9644,11 @@ function parseTopos(src) {
             else if (t === "out") s.outs.push(ref);
             else s.holds.push(ref);
           }
+        } else if (t === "code") {
+          next();
+          const raw = next();
+          const s = systems[owner];
+          if (s && raw) s.codePaths.push(raw.startsWith('"') ? raw.slice(1, -1) : raw);
         } else {
           const from = next();
           if (peek() === "--(") {
@@ -9903,6 +9713,7 @@ function parseTopos(src) {
         ins: [],
         outs: [],
         holds: [],
+        codePaths: [],
         desc: descByName[name]
       };
       systems[name] = sys;
@@ -9936,1014 +9747,153 @@ function parseTopos(src) {
   }
 }
 
-// src/core/compare/connections.ts
-function deriveConnections(systems) {
-  const byName = new Map(systems.map((s) => [s.name, s]));
-  const producers = /* @__PURE__ */ new Map();
-  const consumers = /* @__PURE__ */ new Map();
-  const push = (m, k, v) => {
-    let set = m.get(k);
-    if (!set) {
-      set = /* @__PURE__ */ new Set();
-      m.set(k, set);
-    }
-    set.add(v);
-  };
-  for (const s of systems) {
-    for (const t of s.outs) push(producers, t, s.name);
-    for (const t of s.holds) {
-      push(producers, t, s.name);
-      push(consumers, t, s.name);
-    }
-    for (const t of s.ins) push(consumers, t, s.name);
-  }
-  const conns = [];
-  const ambiguous = [];
-  const things = [.../* @__PURE__ */ new Set([...producers.keys(), ...consumers.keys()])].sort();
-  for (const thing of things) {
-    const prod = [...producers.get(thing) ?? []].sort();
-    const cons = [...consumers.get(thing) ?? []].sort();
-    if (!prod.length || !cons.length) continue;
-    for (const p of prod) {
-      const candidates = cons.filter((c) => c !== p);
-      if (!candidates.length) continue;
-      const pParent = byName.get(p)?.parent;
-      const sameLevel = candidates.filter((c) => byName.get(c)?.parent === pParent);
-      const targets = sameLevel.length ? sameLevel : candidates;
-      for (const c of targets) conns.push({ from: p, thing, to: c });
-    }
-    if (prod.length > 1 || cons.length > 1) ambiguous.push({ thing, producers: prod, consumers: cons });
-  }
-  const seen = /* @__PURE__ */ new Set();
-  const unique = conns.filter((c) => {
-    const k = `${c.from}\0${c.thing}\0${c.to}`;
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  }).sort((a, b) => a.from.localeCompare(b.from) || a.thing.localeCompare(b.thing) || a.to.localeCompare(b.to));
-  return { conns: unique, ambiguous };
-}
-
-// src/core/compare/compare.ts
-function canonFromClaim(c) {
-  return {
-    name: c.system,
-    kind: c.kind,
-    parent: c.parent,
-    ins: new Set(c.ins),
-    outs: new Set(c.outs),
-    holds: new Set(c.holds)
-  };
-}
-function canonFromWorld(world) {
-  const out = /* @__PURE__ */ new Map();
-  for (const sys of Object.values(world.systems)) {
-    if (sys.kind === "world") continue;
-    const parent = sys.parent === world.root ? null : sys.parent;
-    out.set(sys.name, {
-      name: sys.name,
-      kind: sys.kind,
-      parent,
-      ins: new Set(sys.ins),
-      outs: new Set(sys.outs),
-      holds: new Set(sys.holds)
-    });
-  }
-  return out;
-}
-var minus = (a, b) => [...a].filter((x) => !b.has(x)).sort();
-function compare(claims, priorWorld, opts = {}) {
-  const expected = new Map(claims.map((c) => [c.system, canonFromClaim(c)]));
-  const actual = priorWorld ? canonFromWorld(priorWorld) : /* @__PURE__ */ new Map();
-  const entries = [];
-  const names = [.../* @__PURE__ */ new Set([...expected.keys(), ...actual.keys()])].sort();
-  for (const name of names) {
-    const e = expected.get(name);
-    const a = actual.get(name);
-    const claim = claims.find((c) => c.system === name) ?? null;
-    const loc2 = claim?.loc ?? null;
-    if (e && !a) {
-      entries.push({
-        category: "in-code-not-map",
-        system: name,
-        detail: `${e.kind} '${name}' is marked in code but missing from the map`,
-        location: loc2,
-        suggestion: `Run 'topo propose' to add '${e.kind} ${name}'${e.parent ? ` under '${e.parent}'` : ""} to the map.`
-      });
-      continue;
-    }
-    if (a && !e) {
-      if (a.kind === "gateway") continue;
-      entries.push({
-        category: "in-map-not-code",
-        system: name,
-        detail: `'${a.kind} ${name}' is in the map but has no //@topo marker in code`,
-        location: null,
-        suggestion: `Remove '${name}' from the map (run 'topo propose'), or add a //@topo marker if the code still exists.`
-      });
-      continue;
-    }
-    if (!e || !a) continue;
-    if (e.kind !== a.kind) {
-      entries.push({
-        category: "conflicting",
-        system: name,
-        detail: `kind differs \u2014 marker says ${e.kind}, map says ${a.kind}`,
-        location: loc2,
-        suggestion: `Reconcile the kind of '${name}' between the marker and the map, then re-run.`
-      });
-    }
-    if (e.parent && e.parent !== a.parent) {
-      entries.push({
-        category: "conflicting",
-        system: name,
-        detail: `parent differs \u2014 marker says ${e.parent}, map says ${a.parent ?? "(top level)"}`,
-        location: loc2,
-        suggestion: `Reconcile the parent of '${name}', then re-run.`
-      });
-    }
-    for (const [dir, eset, aset] of [
-      ["in", e.ins, a.ins],
-      ["out", e.outs, a.outs],
-      ["holds", e.holds, a.holds]
-    ]) {
-      for (const t of minus(eset, aset))
-        entries.push({
-          category: "in-code-not-map",
-          system: name,
-          detail: `boundary '${dir} ${t}' is marked in code but missing from the map`,
-          location: loc2,
-          suggestion: `Run 'topo propose' to add '${dir} ${t}' to '${name}'.`
-        });
-      for (const t of minus(aset, eset))
-        entries.push({
-          category: "in-map-not-code",
-          system: name,
-          detail: `boundary '${dir} ${t}' is in the map but not marked in code`,
-          location: null,
-          suggestion: `Remove '${dir} ${t}' from '${name}' in the map, or add the marker in code.`
-        });
-    }
-  }
-  for (const e of expected.values()) {
-    if (e.parent === null && e.kind !== "gateway" && e.kind !== "system") {
-      const claim = claims.find((c) => c.system === e.name);
-      entries.push({
-        category: "unclear-boundary",
-        system: e.name,
-        detail: `'${e.kind} ${e.name}' has no parent= \u2014 it will attach at the world root`,
-        location: claim?.loc ?? null,
-        suggestion: `Add 'parent=<System>' to the marker for '${e.name}', or place it in the map.`
-      });
-    }
-  }
-  const boundarySystems = [...expected.values()].map((c) => ({
-    name: c.name,
-    parent: c.parent,
-    ins: c.ins,
-    outs: c.outs,
-    holds: c.holds
-  }));
-  const { ambiguous } = deriveConnections(boundarySystems);
-  for (const amb of ambiguous) {
-    entries.push({
-      category: "unclear-boundary",
-      system: amb.producers[0] ?? amb.thing,
-      detail: `'${amb.thing}' wiring is ambiguous \u2014 producers [${amb.producers.join(", ")}] \xD7 consumers [${amb.consumers.join(", ")}]`,
-      location: null,
-      suggestion: `Pin the intended connection in the map with an explicit 'A --( ${amb.thing} )--> B' line.`
-    });
-  }
-  if (priorWorld) {
-    for (const conn of priorWorld.conns) {
-      const from = expected.get(conn.from);
-      const to = expected.get(conn.to);
-      const fromEmits = from && (from.outs.has(conn.thing) || from.holds.has(conn.thing));
-      const toAccepts = to && (to.ins.has(conn.thing) || to.holds.has(conn.thing));
-      if (from && to && !(fromEmits && toAccepts)) {
-        entries.push({
-          category: "conflicting",
-          system: conn.from,
-          detail: `map connection '${conn.from} --( ${conn.thing} )--> ${conn.to}' is no longer supported by markers`,
-          location: null,
-          suggestion: `Add the missing 'out ${conn.thing}'/'in ${conn.thing}' markers, or remove the connection (run 'topo propose').`
-        });
-      }
-    }
-  }
-  const order = {
-    "in-code-not-map": 0,
-    "in-map-not-code": 1,
-    conflicting: 2,
-    "unclear-boundary": 3
-  };
-  entries.sort((x, y) => order[x.category] - order[y.category] || x.system.localeCompare(y.system) || x.detail.localeCompare(y.detail));
-  const warnings = entries.filter((e) => e.category === "unclear-boundary").length;
-  const failures = entries.length - warnings;
-  const blocking = failures + (opts.strict ? warnings : 0);
-  return {
-    passed: blocking === 0,
-    failures,
-    warnings,
-    entries,
-    generatedAt: opts.generatedAt ?? (/* @__PURE__ */ new Date()).toISOString(),
-    scan: { filesScanned: opts.filesScanned ?? 0, systems: expected.size }
-  };
-}
-
-// node_modules/chalk/source/vendor/ansi-styles/index.js
-var ANSI_BACKGROUND_OFFSET = 10;
-var wrapAnsi16 = (offset = 0) => (code) => `\x1B[${code + offset}m`;
-var wrapAnsi256 = (offset = 0) => (code) => `\x1B[${38 + offset};5;${code}m`;
-var wrapAnsi16m = (offset = 0) => (red, green, blue) => `\x1B[${38 + offset};2;${red};${green};${blue}m`;
-var styles = {
-  modifier: {
-    reset: [0, 0],
-    // 21 isn't widely supported and 22 does the same thing
-    bold: [1, 22],
-    dim: [2, 22],
-    italic: [3, 23],
-    underline: [4, 24],
-    overline: [53, 55],
-    inverse: [7, 27],
-    hidden: [8, 28],
-    strikethrough: [9, 29]
-  },
-  color: {
-    black: [30, 39],
-    red: [31, 39],
-    green: [32, 39],
-    yellow: [33, 39],
-    blue: [34, 39],
-    magenta: [35, 39],
-    cyan: [36, 39],
-    white: [37, 39],
-    // Bright color
-    blackBright: [90, 39],
-    gray: [90, 39],
-    // Alias of `blackBright`
-    grey: [90, 39],
-    // Alias of `blackBright`
-    redBright: [91, 39],
-    greenBright: [92, 39],
-    yellowBright: [93, 39],
-    blueBright: [94, 39],
-    magentaBright: [95, 39],
-    cyanBright: [96, 39],
-    whiteBright: [97, 39]
-  },
-  bgColor: {
-    bgBlack: [40, 49],
-    bgRed: [41, 49],
-    bgGreen: [42, 49],
-    bgYellow: [43, 49],
-    bgBlue: [44, 49],
-    bgMagenta: [45, 49],
-    bgCyan: [46, 49],
-    bgWhite: [47, 49],
-    // Bright color
-    bgBlackBright: [100, 49],
-    bgGray: [100, 49],
-    // Alias of `bgBlackBright`
-    bgGrey: [100, 49],
-    // Alias of `bgBlackBright`
-    bgRedBright: [101, 49],
-    bgGreenBright: [102, 49],
-    bgYellowBright: [103, 49],
-    bgBlueBright: [104, 49],
-    bgMagentaBright: [105, 49],
-    bgCyanBright: [106, 49],
-    bgWhiteBright: [107, 49]
-  }
-};
-var modifierNames = Object.keys(styles.modifier);
-var foregroundColorNames = Object.keys(styles.color);
-var backgroundColorNames = Object.keys(styles.bgColor);
-var colorNames = [...foregroundColorNames, ...backgroundColorNames];
-function assembleStyles() {
-  const codes = /* @__PURE__ */ new Map();
-  for (const [groupName, group] of Object.entries(styles)) {
-    for (const [styleName, style] of Object.entries(group)) {
-      styles[styleName] = {
-        open: `\x1B[${style[0]}m`,
-        close: `\x1B[${style[1]}m`
-      };
-      group[styleName] = styles[styleName];
-      codes.set(style[0], style[1]);
-    }
-    Object.defineProperty(styles, groupName, {
-      value: group,
-      enumerable: false
-    });
-  }
-  Object.defineProperty(styles, "codes", {
-    value: codes,
-    enumerable: false
-  });
-  styles.color.close = "\x1B[39m";
-  styles.bgColor.close = "\x1B[49m";
-  styles.color.ansi = wrapAnsi16();
-  styles.color.ansi256 = wrapAnsi256();
-  styles.color.ansi16m = wrapAnsi16m();
-  styles.bgColor.ansi = wrapAnsi16(ANSI_BACKGROUND_OFFSET);
-  styles.bgColor.ansi256 = wrapAnsi256(ANSI_BACKGROUND_OFFSET);
-  styles.bgColor.ansi16m = wrapAnsi16m(ANSI_BACKGROUND_OFFSET);
-  Object.defineProperties(styles, {
-    rgbToAnsi256: {
-      value(red, green, blue) {
-        if (red === green && green === blue) {
-          if (red < 8) {
-            return 16;
-          }
-          if (red > 248) {
-            return 231;
-          }
-          return Math.round((red - 8) / 247 * 24) + 232;
-        }
-        return 16 + 36 * Math.round(red / 255 * 5) + 6 * Math.round(green / 255 * 5) + Math.round(blue / 255 * 5);
-      },
-      enumerable: false
-    },
-    hexToRgb: {
-      value(hex) {
-        const matches = /[a-f\d]{6}|[a-f\d]{3}/i.exec(hex.toString(16));
-        if (!matches) {
-          return [0, 0, 0];
-        }
-        let [colorString] = matches;
-        if (colorString.length === 3) {
-          colorString = [...colorString].map((character) => character + character).join("");
-        }
-        const integer = Number.parseInt(colorString, 16);
-        return [
-          /* eslint-disable no-bitwise */
-          integer >> 16 & 255,
-          integer >> 8 & 255,
-          integer & 255
-          /* eslint-enable no-bitwise */
-        ];
-      },
-      enumerable: false
-    },
-    hexToAnsi256: {
-      value: (hex) => styles.rgbToAnsi256(...styles.hexToRgb(hex)),
-      enumerable: false
-    },
-    ansi256ToAnsi: {
-      value(code) {
-        if (code < 8) {
-          return 30 + code;
-        }
-        if (code < 16) {
-          return 90 + (code - 8);
-        }
-        let red;
-        let green;
-        let blue;
-        if (code >= 232) {
-          red = ((code - 232) * 10 + 8) / 255;
-          green = red;
-          blue = red;
-        } else {
-          code -= 16;
-          const remainder = code % 36;
-          red = Math.floor(code / 36) / 5;
-          green = Math.floor(remainder / 6) / 5;
-          blue = remainder % 6 / 5;
-        }
-        const value = Math.max(red, green, blue) * 2;
-        if (value === 0) {
-          return 30;
-        }
-        let result = 30 + (Math.round(blue) << 2 | Math.round(green) << 1 | Math.round(red));
-        if (value === 2) {
-          result += 60;
-        }
-        return result;
-      },
-      enumerable: false
-    },
-    rgbToAnsi: {
-      value: (red, green, blue) => styles.ansi256ToAnsi(styles.rgbToAnsi256(red, green, blue)),
-      enumerable: false
-    },
-    hexToAnsi: {
-      value: (hex) => styles.ansi256ToAnsi(styles.hexToAnsi256(hex)),
-      enumerable: false
-    }
-  });
-  return styles;
-}
-var ansiStyles = assembleStyles();
-var ansi_styles_default = ansiStyles;
-
-// node_modules/chalk/source/vendor/supports-color/index.js
-import process2 from "node:process";
-import os from "node:os";
-import tty from "node:tty";
-function hasFlag(flag, argv = globalThis.Deno ? globalThis.Deno.args : process2.argv) {
-  const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
-  const position = argv.indexOf(prefix + flag);
-  const terminatorPosition = argv.indexOf("--");
-  return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
-}
-var { env } = process2;
-var flagForceColor;
-if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
-  flagForceColor = 0;
-} else if (hasFlag("color") || hasFlag("colors") || hasFlag("color=true") || hasFlag("color=always")) {
-  flagForceColor = 1;
-}
-function envForceColor() {
-  if ("FORCE_COLOR" in env) {
-    if (env.FORCE_COLOR === "true") {
-      return 1;
-    }
-    if (env.FORCE_COLOR === "false") {
-      return 0;
-    }
-    return env.FORCE_COLOR.length === 0 ? 1 : Math.min(Number.parseInt(env.FORCE_COLOR, 10), 3);
-  }
-}
-function translateLevel(level) {
-  if (level === 0) {
-    return false;
-  }
-  return {
-    level,
-    hasBasic: true,
-    has256: level >= 2,
-    has16m: level >= 3
-  };
-}
-function _supportsColor(haveStream, { streamIsTTY, sniffFlags = true } = {}) {
-  const noFlagForceColor = envForceColor();
-  if (noFlagForceColor !== void 0) {
-    flagForceColor = noFlagForceColor;
-  }
-  const forceColor = sniffFlags ? flagForceColor : noFlagForceColor;
-  if (forceColor === 0) {
-    return 0;
-  }
-  if (sniffFlags) {
-    if (hasFlag("color=16m") || hasFlag("color=full") || hasFlag("color=truecolor")) {
-      return 3;
-    }
-    if (hasFlag("color=256")) {
-      return 2;
-    }
-  }
-  if ("TF_BUILD" in env && "AGENT_NAME" in env) {
-    return 1;
-  }
-  if (haveStream && !streamIsTTY && forceColor === void 0) {
-    return 0;
-  }
-  const min = forceColor || 0;
-  if (env.TERM === "dumb") {
-    return min;
-  }
-  if (process2.platform === "win32") {
-    const osRelease = os.release().split(".");
-    if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
-      return Number(osRelease[2]) >= 14931 ? 3 : 2;
-    }
-    return 1;
-  }
-  if ("CI" in env) {
-    if (["GITHUB_ACTIONS", "GITEA_ACTIONS", "CIRCLECI"].some((key) => key in env)) {
-      return 3;
-    }
-    if (["TRAVIS", "APPVEYOR", "GITLAB_CI", "BUILDKITE", "DRONE"].some((sign) => sign in env) || env.CI_NAME === "codeship") {
-      return 1;
-    }
-    return min;
-  }
-  if ("TEAMCITY_VERSION" in env) {
-    return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
-  }
-  if (env.COLORTERM === "truecolor") {
-    return 3;
-  }
-  if (env.TERM === "xterm-kitty") {
-    return 3;
-  }
-  if (env.TERM === "xterm-ghostty") {
-    return 3;
-  }
-  if (env.TERM === "wezterm") {
-    return 3;
-  }
-  if ("TERM_PROGRAM" in env) {
-    const version = Number.parseInt((env.TERM_PROGRAM_VERSION || "").split(".")[0], 10);
-    switch (env.TERM_PROGRAM) {
-      case "iTerm.app": {
-        return version >= 3 ? 3 : 2;
-      }
-      case "Apple_Terminal": {
-        return 2;
-      }
-    }
-  }
-  if (/-256(color)?$/i.test(env.TERM)) {
-    return 2;
-  }
-  if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
-    return 1;
-  }
-  if ("COLORTERM" in env) {
-    return 1;
-  }
-  return min;
-}
-function createSupportsColor(stream, options = {}) {
-  const level = _supportsColor(stream, {
-    streamIsTTY: stream && stream.isTTY,
-    ...options
-  });
-  return translateLevel(level);
-}
-var supportsColor = {
-  stdout: createSupportsColor({ isTTY: tty.isatty(1) }),
-  stderr: createSupportsColor({ isTTY: tty.isatty(2) })
-};
-var supports_color_default = supportsColor;
-
-// node_modules/chalk/source/utilities.js
-function stringReplaceAll(string, substring, replacer) {
-  let index = string.indexOf(substring);
-  if (index === -1) {
-    return string;
-  }
-  const substringLength = substring.length;
-  let endIndex = 0;
-  let returnValue = "";
-  do {
-    returnValue += string.slice(endIndex, index) + substring + replacer;
-    endIndex = index + substringLength;
-    index = string.indexOf(substring, endIndex);
-  } while (index !== -1);
-  returnValue += string.slice(endIndex);
-  return returnValue;
-}
-function stringEncaseCRLFWithFirstIndex(string, prefix, postfix, index) {
-  let endIndex = 0;
-  let returnValue = "";
-  do {
-    const gotCR = string[index - 1] === "\r";
-    returnValue += string.slice(endIndex, gotCR ? index - 1 : index) + prefix + (gotCR ? "\r\n" : "\n") + postfix;
-    endIndex = index + 1;
-    index = string.indexOf("\n", endIndex);
-  } while (index !== -1);
-  returnValue += string.slice(endIndex);
-  return returnValue;
-}
-
-// node_modules/chalk/source/index.js
-var { stdout: stdoutColor, stderr: stderrColor } = supports_color_default;
-var GENERATOR = Symbol("GENERATOR");
-var STYLER = Symbol("STYLER");
-var IS_EMPTY = Symbol("IS_EMPTY");
-var levelMapping = [
-  "ansi",
-  "ansi",
-  "ansi256",
-  "ansi16m"
+// src/core/files.ts
+var import_fast_glob = __toESM(require_out4(), 1);
+var import_ignore = __toESM(require_ignore(), 1);
+import { readFileSync as readFileSync2, existsSync as existsSync2 } from "node:fs";
+import { join as join3 } from "node:path";
+var BUILTIN_DENY = [
+  "**/node_modules/**",
+  "**/.git/**",
+  "**/.topo/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/*.lock",
+  "**/*-lock.json"
 ];
-var styles2 = /* @__PURE__ */ Object.create(null);
-var applyOptions = (object, options = {}) => {
-  if (options.level && !(Number.isInteger(options.level) && options.level >= 0 && options.level <= 3)) {
-    throw new Error("The `level` option should be an integer from 0 to 3");
-  }
-  const colorLevel = stdoutColor ? stdoutColor.level : 0;
-  object.level = options.level === void 0 ? colorLevel : options.level;
-};
-var chalkFactory = (options) => {
-  const chalk2 = (...strings) => strings.join(" ");
-  applyOptions(chalk2, options);
-  Object.setPrototypeOf(chalk2, createChalk.prototype);
-  return chalk2;
-};
-function createChalk(options) {
-  return chalkFactory(options);
+var BINARY_EXT = /* @__PURE__ */ new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "svg",
+  "ico",
+  "pdf",
+  "zip",
+  "gz",
+  "tar",
+  "woff",
+  "woff2",
+  "ttf",
+  "eot",
+  "mp4",
+  "mov",
+  "mp3",
+  "wav",
+  "bin",
+  "exe",
+  "wasm",
+  "class",
+  "o",
+  "a",
+  "so",
+  "dylib",
+  "dll",
+  "lockb"
+]);
+function isBinaryExt(path) {
+  const dot = path.lastIndexOf(".");
+  if (dot < 0) return false;
+  return BINARY_EXT.has(path.slice(dot + 1).toLowerCase());
 }
-Object.setPrototypeOf(createChalk.prototype, Function.prototype);
-for (const [styleName, style] of Object.entries(ansi_styles_default)) {
-  styles2[styleName] = {
-    get() {
-      const builder = createBuilder(this, createStyler(style.open, style.close, this[STYLER]), this[IS_EMPTY]);
-      Object.defineProperty(this, styleName, { value: builder });
-      return builder;
-    }
-  };
+function looksBinary(text) {
+  const n = Math.min(text.length, 8192);
+  for (let i = 0; i < n; i++) if (text.charCodeAt(i) === 0) return true;
+  return false;
 }
-styles2.visible = {
-  get() {
-    const builder = createBuilder(this, this[STYLER], true);
-    Object.defineProperty(this, "visible", { value: builder });
-    return builder;
-  }
-};
-var getModelAnsi = (model, level, type, ...arguments_) => {
-  if (model === "rgb") {
-    if (level === "ansi16m") {
-      return ansi_styles_default[type].ansi16m(...arguments_);
-    }
-    if (level === "ansi256") {
-      return ansi_styles_default[type].ansi256(ansi_styles_default.rgbToAnsi256(...arguments_));
-    }
-    return ansi_styles_default[type].ansi(ansi_styles_default.rgbToAnsi(...arguments_));
-  }
-  if (model === "hex") {
-    return getModelAnsi("rgb", level, type, ...ansi_styles_default.hexToRgb(...arguments_));
-  }
-  return ansi_styles_default[type][model](...arguments_);
-};
-var usedModels = ["rgb", "hex", "ansi256"];
-for (const model of usedModels) {
-  styles2[model] = {
-    get() {
-      const { level } = this;
-      return function(...arguments_) {
-        const styler = createStyler(getModelAnsi(model, levelMapping[level], "color", ...arguments_), ansi_styles_default.color.close, this[STYLER]);
-        return createBuilder(this, styler, this[IS_EMPTY]);
-      };
-    }
-  };
-  const bgModel = "bg" + model[0].toUpperCase() + model.slice(1);
-  styles2[bgModel] = {
-    get() {
-      const { level } = this;
-      return function(...arguments_) {
-        const styler = createStyler(getModelAnsi(model, levelMapping[level], "bgColor", ...arguments_), ansi_styles_default.bgColor.close, this[STYLER]);
-        return createBuilder(this, styler, this[IS_EMPTY]);
-      };
-    }
-  };
+function makeIgnore(root, config) {
+  const ig = (0, import_ignore.default)();
+  const gitignore = join3(root, ".gitignore");
+  if (existsSync2(gitignore)) ig.add(readFileSync2(gitignore, "utf8"));
+  if (config.ignore.length) ig.add(config.ignore);
+  return ig;
 }
-var proto = Object.defineProperties(() => {
-}, {
-  ...styles2,
-  level: {
-    enumerable: true,
-    get() {
-      return this[GENERATOR].level;
-    },
-    set(level) {
-      this[GENERATOR].level = level;
-    }
-  }
-});
-var createStyler = (open2, close, parent) => {
-  let openAll;
-  let closeAll;
-  if (parent === void 0) {
-    openAll = open2;
-    closeAll = close;
-  } else {
-    openAll = parent.openAll + open2;
-    closeAll = close + parent.closeAll;
-  }
-  return {
-    open: open2,
-    close,
-    openAll,
-    closeAll,
-    parent
-  };
-};
-var createBuilder = (self, _styler, _isEmpty) => {
-  const builder = (...arguments_) => applyStyle(builder, arguments_.length === 1 ? "" + arguments_[0] : arguments_.join(" "));
-  Object.setPrototypeOf(builder, proto);
-  builder[GENERATOR] = self;
-  builder[STYLER] = _styler;
-  builder[IS_EMPTY] = _isEmpty;
-  return builder;
-};
-var applyStyle = (self, string) => {
-  if (self.level <= 0 || !string) {
-    return self[IS_EMPTY] ? "" : string;
-  }
-  let styler = self[STYLER];
-  if (styler === void 0) {
-    return string;
-  }
-  const { openAll, closeAll } = styler;
-  if (string.includes("\x1B")) {
-    while (styler !== void 0) {
-      string = stringReplaceAll(string, styler.close, styler.open);
-      styler = styler.parent;
-    }
-  }
-  const lfIndex = string.indexOf("\n");
-  if (lfIndex !== -1) {
-    string = stringEncaseCRLFWithFirstIndex(string, closeAll, openAll, lfIndex);
-  }
-  return openAll + string + closeAll;
-};
-Object.defineProperties(createChalk.prototype, styles2);
-var chalk = createChalk();
-var chalkStderr = createChalk({ level: stderrColor ? stderrColor.level : 0 });
-var source_default = chalk;
-
-// src/core/compare/report.ts
-var HEADING = {
-  "in-code-not-map": "In code, not in map",
-  "in-map-not-code": "In map, not in code",
-  conflicting: "Conflicting",
-  "unclear-boundary": "Unclear (warnings)"
-};
-var COLOR = {
-  "in-code-not-map": source_default.yellow,
-  "in-map-not-code": source_default.magenta,
-  conflicting: source_default.red,
-  "unclear-boundary": source_default.gray
-};
-function loc(e) {
-  return e.location ? `${e.location.file}:${e.location.line}` : "\u2014";
-}
-function renderHuman(report) {
-  const lines = [];
-  const cats = ["in-code-not-map", "in-map-not-code", "conflicting", "unclear-boundary"];
-  for (const cat of cats) {
-    const group = report.entries.filter((e) => e.category === cat);
-    if (!group.length) continue;
-    lines.push("");
-    lines.push(COLOR[cat](source_default.bold(`${HEADING[cat]} (${group.length})`)));
-    for (const e of group) {
-      lines.push(`  ${source_default.bold(e.system)}  ${source_default.dim(loc(e))}`);
-      lines.push(`    ${e.detail}`);
-      lines.push(`    ${source_default.cyan("\u2192")} ${source_default.dim(e.suggestion)}`);
-    }
-  }
-  lines.push("");
-  if (report.passed) {
-    lines.push(source_default.green(`\u2713 map is in sync`) + source_default.dim(`  (${report.scan.systems} systems, ${report.scan.filesScanned} files)`));
-  } else {
-    const w = report.warnings ? source_default.dim(` + ${report.warnings} warning${report.warnings === 1 ? "" : "s"}`) : "";
-    lines.push(source_default.red(`\u2717 ${report.failures} drift failure${report.failures === 1 ? "" : "s"}`) + w);
-  }
-  return lines.join("\n");
-}
-
-// src/cli/commands/check.ts
-function runCheck(opts) {
-  const { root, config } = loadConfig(opts.dir ?? process.cwd());
-  const { claims, filesScanned } = scanClaims(root, config);
-  const mp = mapPath(root, config);
-  let priorWorld = null;
-  if (existsSync3(mp)) {
-    const { world, error } = parseTopos(readFileSync3(mp, "utf8"));
-    if (error || !world) {
-      console.error(`topo: failed to parse ${config.map}: ${error ?? "no world found"}`);
-      return 2;
-    }
-    priorWorld = world;
-  }
-  const report = compare(claims, priorWorld, { strict: opts.strict, filesScanned });
-  if (opts.json) console.log(JSON.stringify(report, null, 2));
-  else console.log(renderHuman(report));
-  return report.passed ? 0 : 1;
-}
-
-// src/cli/commands/sync.ts
-import { readFileSync as readFileSync4, writeFileSync, existsSync as existsSync4 } from "node:fs";
-
-// src/core/serialize.ts
-var IND = "  ";
-function serializeThing(t) {
-  if (t.fields.length === 0) return `thing ${t.name} { }`;
-  const lines = t.fields.map((f) => `${IND}${f.name}: ${f.type}`);
-  return `thing ${t.name} {
-${lines.join("\n")}
-}`;
-}
-function ancestorsInclusive(world, name) {
-  const out = [];
-  let cur = name;
-  const seen = /* @__PURE__ */ new Set();
-  while (cur != null && !seen.has(cur)) {
-    seen.add(cur);
-    out.push(cur);
-    cur = world.systems[cur]?.parent ?? null;
-  }
-  return out;
-}
-function lca(world, a, b) {
-  const up = ancestorsInclusive(world, a);
-  const ofB = new Set(ancestorsInclusive(world, b));
-  for (const x of up) if (ofB.has(x)) return x;
-  return world.root;
-}
-function groupConnsByLca(world) {
-  const byLca = /* @__PURE__ */ new Map();
-  const sorted = [...world.conns].sort(
-    (x, y) => x.from.localeCompare(y.from) || x.thing.localeCompare(y.thing) || x.to.localeCompare(y.to)
-  );
-  for (const c of sorted) {
-    const owner = lca(world, c.from, c.to);
-    const arr = byLca.get(owner);
-    if (arr) arr.push(c);
-    else byLca.set(owner, [c]);
-  }
-  return byLca;
-}
-function emitSystem(name, world, connsByLca, depth, out) {
-  const sys = world.systems[name];
-  if (!sys) return;
-  const ind = IND.repeat(depth);
-  const i2 = IND.repeat(depth + 1);
-  const desc = sys.desc ? `  // ${sys.desc}` : "";
-  out.push(`${ind}${sys.kind} ${sys.name} {${desc}`);
-  for (const t of sys.ins) out.push(`${i2}in ${t}`);
-  for (const t of sys.outs) out.push(`${i2}out ${t}`);
-  for (const t of sys.holds) out.push(`${i2}holds ${t}`);
-  const hadBoundary = sys.ins.length + sys.outs.length + sys.holds.length > 0;
-  if (hadBoundary && sys.children.length) out.push("");
-  sys.children.forEach((child, idx) => {
-    if (idx > 0) out.push("");
-    emitSystem(child, world, connsByLca, depth + 1, out);
+function listSourceFiles(root, config) {
+  const ig = makeIgnore(root, config);
+  const entries = import_fast_glob.default.sync(config.include, {
+    cwd: root,
+    dot: false,
+    onlyFiles: true,
+    followSymbolicLinks: false,
+    ignore: BUILTIN_DENY
   });
-  const conns = connsByLca.get(name) ?? [];
-  if (conns.length) {
-    if (hadBoundary || sys.children.length) out.push("");
-    for (const c of conns) out.push(`${i2}${c.from} --( ${c.thing} )--> ${c.to}`);
-  }
-  out.push(`${ind}}`);
+  return entries.filter((p) => !isBinaryExt(p) && !ig.ignores(p)).sort();
 }
-function serializeTopos(world, opts = {}) {
-  const blocks = [];
-  if (opts.header) blocks.push(opts.header.trimEnd());
-  const things = Object.values(world.things).sort((a, b) => a.name.localeCompare(b.name));
-  for (const t of things) blocks.push(serializeThing(t));
-  const connsByLca = groupConnsByLca(world);
-  const worldLines = [];
-  emitSystem(world.root, world, connsByLca, 0, worldLines);
-  blocks.push(worldLines.join("\n"));
-  return blocks.join("\n\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
+function matchGlobs(root, globs, config) {
+  if (!globs.length) return [];
+  const ig = makeIgnore(root, config);
+  const entries = import_fast_glob.default.sync(globs, {
+    cwd: root,
+    dot: false,
+    onlyFiles: true,
+    followSymbolicLinks: false,
+    ignore: BUILTIN_DENY
+  });
+  return entries.filter((p) => !isBinaryExt(p) && !ig.ignores(p)).sort();
+}
+function readFileText(root, rel) {
+  try {
+    const text = readFileSync2(join3(root, rel), "utf8");
+    return looksBinary(text) ? null : text;
+  } catch {
+    return null;
+  }
 }
 
-// src/core/regen/merge.ts
-function dedupConns(conns) {
-  const seen = /* @__PURE__ */ new Set();
-  return conns.filter((c) => {
-    const k = `${c.from} ${c.thing} ${c.to}`;
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  }).sort((a, b) => a.from.localeCompare(b.from) || a.thing.localeCompare(b.thing) || a.to.localeCompare(b.to));
+// src/core/coverage/resolve.ts
+function specificity(glob) {
+  const wild = glob.search(/[*?{}[\]]/);
+  const base = wild === -1 ? glob : glob.slice(0, wild);
+  const depth = (base.match(/\//g) ?? []).length;
+  return [depth, glob.length];
 }
-function rebuildChildren(systems, priorWorld) {
-  const kids = /* @__PURE__ */ new Map();
-  for (const s of Object.values(systems)) {
-    if (s.kind === "world" || !s.parent) continue;
-    const arr = kids.get(s.parent);
-    if (arr) arr.push(s.name);
-    else kids.set(s.parent, [s.name]);
-  }
-  for (const sys of Object.values(systems)) {
-    const names = kids.get(sys.name) ?? [];
-    const priorOrder = priorWorld?.systems[sys.name]?.children ?? [];
-    const kept = priorOrder.filter((n) => names.includes(n));
-    const added = names.filter((n) => !priorOrder.includes(n)).sort();
-    sys.children = [...kept, ...added];
-  }
+function moreSpecific(a, b) {
+  return a[0] - b[0] || a[1] - b[1];
 }
-function regenerate(claims, priorWorld, opts = {}) {
-  const root = priorWorld?.root ?? opts.worldName ?? "World";
-  const systems = {};
-  systems[root] = {
-    name: root,
-    kind: "world",
-    parent: null,
-    children: [],
-    ins: [],
-    outs: [],
-    holds: [],
-    desc: priorWorld?.systems[root]?.desc
-  };
-  for (const c of claims) {
-    const prior = priorWorld?.systems[c.system];
-    systems[c.system] = {
-      name: c.system,
-      kind: c.kind,
-      parent: c.parent ?? root,
-      children: [],
-      ins: [...c.ins],
-      outs: [...c.outs],
-      holds: [...c.holds],
-      desc: prior?.desc
-    };
-  }
-  if (priorWorld) {
-    for (const s of Object.values(priorWorld.systems)) {
-      if (s.kind === "world" || systems[s.name]) continue;
-      if (s.kind === "gateway") {
-        systems[s.name] = {
-          name: s.name,
-          kind: "gateway",
-          parent: s.parent ?? root,
-          children: [],
-          ins: [...s.ins],
-          outs: [...s.outs],
-          holds: [...s.holds],
-          desc: s.desc
-        };
+function resolveOwnership(root, config, world) {
+  const universe = listSourceFiles(root, config);
+  const inUniverse = new Set(universe);
+  const claimsByFile = /* @__PURE__ */ new Map();
+  const dangling = [];
+  for (const sys of Object.values(world.systems)) {
+    for (const glob of sys.codePaths) {
+      const matched = matchGlobs(root, [glob], config).filter((f) => inUniverse.has(f));
+      if (matched.length === 0) {
+        dangling.push({ system: sys.name, glob });
+        continue;
+      }
+      const spec = specificity(glob);
+      for (const f of matched) {
+        const list = claimsByFile.get(f) ?? [];
+        list.push({ system: sys.name, spec });
+        claimsByFile.set(f, list);
       }
     }
   }
-  for (const s of Object.values(systems)) {
-    if (s.kind === "world") continue;
-    if (!s.parent || !systems[s.parent]) s.parent = root;
-  }
-  rebuildChildren(systems, priorWorld);
-  const things = {};
-  if (priorWorld) for (const t of Object.values(priorWorld.things)) things[t.name] = { name: t.name, fields: [...t.fields] };
-  const boundarySystems = Object.values(systems).filter((s) => s.kind !== "world").map((s) => ({ name: s.name, parent: s.parent, ins: new Set(s.ins), outs: new Set(s.outs), holds: new Set(s.holds) }));
-  const { conns: derived } = deriveConnections(boundarySystems);
-  const supported = (c) => {
-    const f = systems[c.from];
-    const t = systems[c.to];
-    if (!f || !t) return false;
-    const emits = f.outs.includes(c.thing) || f.holds.includes(c.thing);
-    const accepts = t.ins.includes(c.thing) || t.holds.includes(c.thing);
-    return emits && accepts;
-  };
-  const preserved = priorWorld ? priorWorld.conns.filter(supported) : [];
-  const conns = dedupConns([...preserved, ...derived]);
-  const referenced = /* @__PURE__ */ new Set();
-  for (const s of Object.values(systems)) for (const t of [...s.ins, ...s.outs, ...s.holds]) referenced.add(t);
-  for (const c of conns) referenced.add(c.thing);
-  for (const name of referenced) if (!things[name]) things[name] = { name, fields: [] };
-  return { root, systems, things, conns };
-}
-
-// src/core/regen/draft.ts
-function structuralKey(s) {
-  return [s.kind, s.parent, [...s.ins].sort().join(","), [...s.outs].sort().join(","), [...s.holds].sort().join(",")].join("|");
-}
-function summarizeDiff(prior, next) {
-  const prev = prior?.systems ?? {};
-  const nextNames = new Set(Object.values(next.systems).filter((s) => s.kind !== "world").map((s) => s.name));
-  const prevNames = new Set(Object.values(prev).filter((s) => s.kind !== "world").map((s) => s.name));
-  const added = [...nextNames].filter((n) => !prevNames.has(n)).sort();
-  const removed = [...prevNames].filter((n) => !nextNames.has(n)).sort();
-  const changed = [...nextNames].filter((n) => prevNames.has(n) && structuralKey(next.systems[n]) !== structuralKey(prev[n])).sort();
-  return { added, removed, changed };
-}
-function extractHeader(src) {
-  const head = [];
-  for (const line of src.split("\n")) {
-    const t = line.trim();
-    if (t === "") {
-      if (head.length) break;
+  const owner = /* @__PURE__ */ new Map();
+  const bySystem = /* @__PURE__ */ new Map();
+  const uncovered = [];
+  const ambiguous = [];
+  for (const file of universe) {
+    const claims = claimsByFile.get(file);
+    if (!claims || claims.length === 0) {
+      uncovered.push(file);
       continue;
     }
-    if (t.startsWith("//")) head.push(line.replace(/\s+$/, ""));
-    else break;
+    claims.sort((a, b) => moreSpecific(b.spec, a.spec));
+    const top = claims[0].spec;
+    const topSystems = [...new Set(claims.filter((c) => moreSpecific(c.spec, top) === 0).map((c) => c.system))];
+    if (topSystems.length > 1) ambiguous.push({ file, systems: topSystems.sort() });
+    const winner = topSystems.sort()[0];
+    owner.set(file, winner);
+    const owned = bySystem.get(winner) ?? [];
+    owned.push(file);
+    bySystem.set(winner, owned);
   }
-  return head.length ? head.join("\n") : void 0;
+  for (const files of bySystem.values()) files.sort();
+  return { universe, owner, bySystem, uncovered, dangling, ambiguous };
 }
-function isEmptyDiff(s) {
-  return s.added.length === 0 && s.removed.length === 0 && s.changed.length === 0;
-}
-
-// src/cli/commands/sync.ts
-function runSync(opts) {
-  const { root, config } = loadConfig(opts.dir ?? process.cwd());
-  const { claims } = scanClaims(root, config);
-  const mp = mapPath(root, config);
-  let prior = null;
-  let priorText = "";
-  if (existsSync4(mp)) {
-    priorText = readFileSync4(mp, "utf8");
-    const { world: world2, error } = parseTopos(priorText);
-    if (error || !world2) {
-      console.error(`topo: failed to parse ${config.map}: ${error ?? "no world found"}`);
-      return 2;
-    }
-    prior = world2;
-  }
-  const world = regenerate(claims, prior, { worldName: config.world });
-  const header = extractHeader(priorText) ?? `// ${world.root} \u2014 system map. Generated by topo from //@topo markers.`;
-  const text = serializeTopos(world, { header });
-  const summary = summarizeDiff(prior, world);
-  writeFileSync(mp, text);
-  if (opts.json) {
-    console.log(JSON.stringify({ synced: config.map, summary }, null, 2));
-    return 0;
-  }
-  if (isEmptyDiff(summary)) {
-    console.log(`${config.map} already matches the markers.`);
-  } else {
-    console.log(`Synced ${config.map}  (+${summary.added.length} ~${summary.changed.length} -${summary.removed.length}) \u2014 it now matches the markers.`);
-  }
-  console.log(`Next: 'topo check' to confirm it's green, 'topo view' to watch it live.`);
-  return 0;
-}
-
-// src/cli/commands/regen.ts
-import { readFileSync as readFileSync5, writeFileSync as writeFileSync2, existsSync as existsSync5 } from "node:fs";
 
 // src/core/hash.ts
 import { createHash } from "node:crypto";
@@ -10951,89 +9901,320 @@ function sha256(content) {
   return createHash("sha256").update(content).digest("hex");
 }
 
-// src/cli/commands/regen.ts
-function runRegen(opts) {
-  const { root, config } = loadConfig(opts.dir ?? process.cwd());
-  const { claims } = scanClaims(root, config);
-  const mp = mapPath(root, config);
-  let prior = null;
-  let priorText = "";
-  if (existsSync5(mp)) {
-    priorText = readFileSync5(mp, "utf8");
-    const { world: world2, error } = parseTopos(priorText);
-    if (error || !world2) {
-      console.error(`topo: failed to parse ${config.map}: ${error ?? "no world found"}`);
-      return 2;
+// src/core/coverage/digest.ts
+function regionDigest(root, files) {
+  const sorted = [...files].sort();
+  const perFile = {};
+  const lines = [];
+  for (const rel of sorted) {
+    const text = readFileText(root, rel);
+    const h = sha256(text ?? "");
+    perFile[rel] = h;
+    lines.push(`${rel}\0${h}`);
+  }
+  return { files: perFile, digest: sha256(lines.join("\n")) };
+}
+function manifestDigest(text) {
+  return sha256(text);
+}
+
+// src/core/coverage/snapshot.ts
+function buildSnapshot(root, config, world, manifestText) {
+  const ownership = resolveOwnership(root, config, world);
+  const regions = {};
+  for (const [system, files] of ownership.bySystem) regions[system] = regionDigest(root, files);
+  return { ownership, manifestDigest: manifestDigest(manifestText), regions };
+}
+
+// src/core/coverage/lock.ts
+import { readFileSync as readFileSync3, writeFileSync, existsSync as existsSync3 } from "node:fs";
+function readLock(root, config) {
+  const lp = lockPath(root, config);
+  if (!existsSync3(lp)) return null;
+  try {
+    return JSON.parse(readFileSync3(lp, "utf8"));
+  } catch {
+    return null;
+  }
+}
+function writeLock(root, config, lock) {
+  writeFileSync(lockPath(root, config), JSON.stringify(lock, null, 2) + "\n");
+}
+
+// src/core/coverage/check.ts
+import { dirname as dirname2 } from "node:path";
+var CATEGORY_ORDER = {
+  "manifest-unapproved": 0,
+  "region-changed": 1,
+  "uncovered-code": 2,
+  "dangling-code": 3,
+  "ambiguous-ownership": 4
+};
+function mappedDirs(ownedFiles) {
+  const dirs = /* @__PURE__ */ new Set();
+  for (const f of ownedFiles) {
+    let d = dirname2(f);
+    while (d && d !== "." && !dirs.has(d)) {
+      dirs.add(d);
+      d = dirname2(d);
     }
-    prior = world2;
   }
-  const world = regenerate(claims, prior, { worldName: config.world });
-  const header = extractHeader(priorText) ?? `// ${world.root} \u2014 system map. Generated by topo from //@topo markers.`;
-  const text = serializeTopos(world, { header });
-  const summary = summarizeDiff(prior, world);
-  if (opts.write) {
-    writeFileSync2(mp, text);
-    if (opts.json) console.log(JSON.stringify({ wrote: config.map, summary }, null, 2));
-    else console.log(`Wrote ${config.map}  (+${summary.added.length} ~${summary.changed.length} -${summary.removed.length})`);
-    return 0;
+  return dirs;
+}
+function checkSnapshot(config, world, snapshot, lock, opts = {}) {
+  const { policy } = config;
+  const { ownership, regions } = snapshot;
+  const entries = [];
+  const warn = /* @__PURE__ */ new Set();
+  const add = (e, isWarning) => {
+    entries.push(e);
+    if (isWarning) warn.add(e);
+  };
+  if (policy.coverage !== "off") {
+    const owned = mappedDirs(ownership.owner.keys());
+    for (const file of ownership.uncovered) {
+      const inMappedArea = owned.has(dirname2(file));
+      const isWarning = policy.coverage === "mapped" && !inMappedArea;
+      add(
+        {
+          category: "uncovered-code",
+          system: "",
+          detail: `${file} is not owned by any system.`,
+          location: { file },
+          suggestion: `Add a \`code "\u2026"\` glob to the system this file belongs to in ${config.map} (or add it to "ignore").`
+        },
+        isWarning
+      );
+    }
   }
-  const dp = draftPath(root, config);
-  writeFileSync2(dp, text);
-  const meta = { base: sha256(priorText), generatedAt: (/* @__PURE__ */ new Date()).toISOString(), summary };
-  writeFileSync2(draftMetaPath(root, config), JSON.stringify(meta, null, 2) + "\n");
-  if (opts.json) {
-    console.log(JSON.stringify({ draft: config.draft, summary }, null, 2));
+  for (const { system, glob } of ownership.dangling) {
+    add(
+      {
+        category: "dangling-code",
+        system,
+        detail: `${system}'s code glob "${glob}" matches no source file.`,
+        location: null,
+        suggestion: `Fix or remove the \`code "${glob}"\` line under ${system} in ${config.map}.`
+      },
+      false
+    );
+  }
+  for (const { file, systems } of ownership.ambiguous) {
+    add(
+      {
+        category: "ambiguous-ownership",
+        system: systems.join(", "),
+        detail: `${file} is claimed equally by ${systems.join(" and ")}.`,
+        location: { file },
+        suggestion: `Make one glob more specific so a single system owns ${file}.`
+      },
+      false
+    );
+  }
+  if (!lock) {
+    add(
+      {
+        category: "manifest-unapproved",
+        system: "",
+        detail: `No ${config.lock} yet \u2014 the map hasn't been approved.`,
+        location: null,
+        suggestion: `Once coverage is clean, run \`topo approve\` to record the approved snapshot.`
+      },
+      false
+    );
   } else {
-    console.log(`Proposed ${config.draft}`);
-    if (summary.added.length) console.log(`  + added:   ${summary.added.join(", ")}`);
-    if (summary.changed.length) console.log(`  ~ changed: ${summary.changed.join(", ")}`);
-    if (summary.removed.length) console.log(`  - removed: ${summary.removed.join(", ")}`);
-    if (isEmptyDiff(summary)) console.log("  (no structural change)");
-    console.log(`Review it in 'topo view', then 'topo approve'.`);
+    if (lock.manifestDigest !== snapshot.manifestDigest) {
+      add(
+        {
+          category: "manifest-unapproved",
+          system: "",
+          detail: `${config.map} changed since it was last approved.`,
+          location: null,
+          suggestion: `Review the diagram, then run \`topo approve\` to re-lock it.`
+        },
+        false
+      );
+    }
+    for (const [system, region] of Object.entries(regions)) {
+      const prior = lock.systems[system];
+      if (prior && prior.digest !== region.digest) {
+        add(
+          {
+            category: "region-changed",
+            system,
+            detail: `${system}'s code changed since it was last approved.`,
+            location: null,
+            suggestion: `Review ${system}'s code; update the diagram in ${config.map} if the structure changed, then \`topo approve\`.`
+          },
+          policy.onRegionChange === "warn"
+        );
+      }
+    }
   }
-  return 0;
+  entries.sort(
+    (a, b) => CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category] || a.system.localeCompare(b.system) || a.detail.localeCompare(b.detail)
+  );
+  const warnings = entries.filter((e) => warn.has(e)).length;
+  const failures = entries.length - warnings;
+  const blocking = failures + (opts.strict ? warnings : 0);
+  const systemsWithCode = Object.keys(regions).length;
+  return {
+    passed: blocking === 0,
+    failures,
+    warnings,
+    entries,
+    generatedAt: opts.generatedAt ?? (/* @__PURE__ */ new Date()).toISOString(),
+    scan: { filesScanned: ownership.universe.length, systems: Object.keys(world.systems).length - 1 },
+    coverage: {
+      universe: ownership.universe.length,
+      covered: ownership.owner.size,
+      uncovered: ownership.uncovered.length,
+      systemsWithCode
+    }
+  };
+}
+
+// src/core/coverage/report.ts
+var LABEL = {
+  "manifest-unapproved": "not approved",
+  "region-changed": "region changed",
+  "uncovered-code": "uncovered",
+  "dangling-code": "dangling glob",
+  "ambiguous-ownership": "ambiguous"
+};
+function renderReport(r) {
+  const c = r.coverage;
+  const coverageLine = `coverage: ${c.covered}/${c.universe} source files owned by ${c.systemsWithCode} system${c.systemsWithCode === 1 ? "" : "s"}${c.uncovered ? `, ${c.uncovered} uncovered` : ""}`;
+  if (r.passed && r.entries.length === 0) {
+    return `\u2713 map is in sync  (${coverageLine})`;
+  }
+  const lines = [];
+  const counts = `${r.failures} to fix${r.warnings ? `, ${r.warnings} warning${r.warnings > 1 ? "s" : ""}` : ""}`;
+  lines.push(r.passed ? `\u2713 map is in sync  (${counts})` : `\u2717 map has drifted  (${counts})`);
+  for (const e of r.entries) {
+    const loc = e.location ? `  (${e.location.file}${e.location.line ? `:${e.location.line}` : ""})` : "";
+    lines.push("");
+    lines.push(`  ${LABEL[e.category]}: ${e.detail}${loc}`);
+    lines.push(`    \u2192 ${e.suggestion}`);
+  }
+  lines.push("");
+  lines.push(`  ${coverageLine}`);
+  return lines.join("\n");
+}
+
+// src/cli/commands/check.ts
+function runCheck(opts) {
+  const { root, config } = loadConfig(opts.dir ?? process.cwd());
+  const mp = mapPath(root, config);
+  if (!existsSync4(mp)) {
+    console.error(`topo: no ${config.map} found. Run 'topo init', then author the map.`);
+    return 2;
+  }
+  const text = readFileSync4(mp, "utf8");
+  const { world, error } = parseTopos(text);
+  if (error || !world) {
+    console.error(`topo: failed to parse ${config.map}: ${error ?? "no world found"}`);
+    return 2;
+  }
+  const snapshot = buildSnapshot(root, config, world, text);
+  const lock = readLock(root, config);
+  const report = checkSnapshot(config, world, snapshot, lock, { strict: opts.strict });
+  if (opts.json) console.log(JSON.stringify(report, null, 2));
+  else console.log(renderReport(report));
+  return report.passed ? 0 : 1;
 }
 
 // src/cli/commands/approve.ts
-import { readFileSync as readFileSync6, writeFileSync as writeFileSync3, existsSync as existsSync6, rmSync } from "node:fs";
+import { readFileSync as readFileSync5, existsSync as existsSync5 } from "node:fs";
+function diffRegion(prior, next) {
+  const p = prior?.files ?? {};
+  const n = next.files;
+  let added = 0;
+  let changed = 0;
+  let removed = 0;
+  for (const k of Object.keys(n)) {
+    if (!(k in p)) added++;
+    else if (p[k] !== n[k]) changed++;
+  }
+  for (const k of Object.keys(p)) if (!(k in n)) removed++;
+  const total = Object.keys(n).length;
+  if (!prior) return `${total} file${total === 1 ? "" : "s"} (new)`;
+  if (!added && !changed && !removed) return `${total} file${total === 1 ? "" : "s"}, unchanged`;
+  return `+${added} ~${changed} -${removed}  (${total} file${total === 1 ? "" : "s"})`;
+}
 function runApprove(opts) {
   const { root, config } = loadConfig(opts.dir ?? process.cwd());
-  const dp = draftPath(root, config);
-  const mtp = draftMetaPath(root, config);
-  if (!existsSync6(dp)) {
-    console.error(`topo: no draft at ${config.draft}. Run 'topo propose' first.`);
+  if (config.policy.approval === "human" && !opts.confirm && !process.stdin.isTTY) {
+    console.error(
+      `topo: approval policy is 'human' \u2014 a person must run 'topo approve --confirm' (or approve in 'topo view').`
+    );
     return 2;
   }
-  if (opts.reject) {
-    rmSync(dp);
-    if (existsSync6(mtp)) rmSync(mtp);
-    console.log(`Rejected \u2014 discarded ${config.draft}.`);
-    return 0;
-  }
   const mp = mapPath(root, config);
-  const currentBase = existsSync6(mp) ? sha256(readFileSync6(mp, "utf8")) : sha256("");
-  if (existsSync6(mtp)) {
-    try {
-      const meta = JSON.parse(readFileSync6(mtp, "utf8"));
-      if (meta.base !== currentBase) {
-        console.error(`topo: the live map changed since this draft was generated. Re-run 'topo propose'.`);
-        return 1;
+  if (!existsSync5(mp)) {
+    console.error(`topo: no ${config.map} found. Run 'topo init', then author the map.`);
+    return 2;
+  }
+  const text = readFileSync5(mp, "utf8");
+  const { world, error } = parseTopos(text);
+  if (error || !world) {
+    console.error(`topo: failed to parse ${config.map}: ${error ?? "no world found"}`);
+    return 2;
+  }
+  const snapshot = buildSnapshot(root, config, world, text);
+  const prior = readLock(root, config);
+  const scope = opts.systems && opts.systems.length ? new Set(opts.systems) : null;
+  const systems = {};
+  if (scope) {
+    if (!prior) {
+      console.error(`topo: no ${config.lock} yet \u2014 run 'topo approve' (no arguments) first.`);
+      return 2;
+    }
+    Object.assign(systems, prior.systems);
+    for (const name of scope) {
+      const region = snapshot.regions[name];
+      if (!region) {
+        console.error(`topo: '${name}' owns no code; nothing to re-lock.`);
+        return 2;
       }
-    } catch {
+      systems[name] = { globs: world.systems[name]?.codePaths ?? [], files: region.files, digest: region.digest };
+    }
+  } else {
+    for (const [name, region] of Object.entries(snapshot.regions)) {
+      systems[name] = { globs: world.systems[name]?.codePaths ?? [], files: region.files, digest: region.digest };
     }
   }
-  writeFileSync3(mp, readFileSync6(dp, "utf8"));
-  rmSync(dp);
-  if (existsSync6(mtp)) rmSync(mtp);
-  console.log(`Approved \u2014 ${config.map} updated.`);
+  const lock = {
+    version: 1,
+    world: world.root,
+    manifestDigest: scope && prior ? prior.manifestDigest : snapshot.manifestDigest,
+    systems,
+    coverage: { universe: snapshot.ownership.universe.length, covered: snapshot.ownership.owner.size },
+    approvedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  writeLock(root, config, lock);
+  if (opts.json) {
+    console.log(JSON.stringify({ approved: config.lock, systems: Object.keys(systems).length }, null, 2));
+    return 0;
+  }
+  const names = Object.keys(systems).sort();
+  console.log(`Approved ${config.lock}  (${world.root})`);
+  for (const name of names) {
+    if (scope && !scope.has(name)) continue;
+    console.log(`  ${name}  ${diffRegion(prior?.systems[name], systems[name])}`);
+  }
+  const uncovered = snapshot.ownership.uncovered.length;
+  console.log(
+    `${lock.coverage.covered}/${lock.coverage.universe} source files owned by ${names.length} system${names.length === 1 ? "" : "s"}${uncovered ? ` \u2014 ${uncovered} still uncovered (topo check)` : "."}`
+  );
   return 0;
 }
 
 // src/cli/commands/init.ts
 import {
-  existsSync as existsSync8,
-  readFileSync as readFileSync7,
-  writeFileSync as writeFileSync4,
+  existsSync as existsSync7,
+  readFileSync as readFileSync6,
+  writeFileSync as writeFileSync2,
   mkdirSync,
   copyFileSync,
   chmodSync,
@@ -11042,13 +10223,13 @@ import {
 import { join as join5, resolve as resolve2 } from "node:path";
 
 // src/core/assets.ts
-import { existsSync as existsSync7 } from "node:fs";
+import { existsSync as existsSync6 } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join as join4 } from "node:path";
 function resolveAssetsDir() {
   for (const rel of ["./assets/", "../assets/", "../../assets/"]) {
     const p = fileURLToPath(new URL(rel, import.meta.url));
-    if (existsSync7(join4(p, "skill"))) return p;
+    if (existsSync6(join4(p, "skill"))) return p;
   }
   return fileURLToPath(new URL("./assets/", import.meta.url));
 }
@@ -11056,10 +10237,21 @@ var ASSETS_DIR = resolveAssetsDir();
 
 // src/cli/commands/init.ts
 var ASSETS = ASSETS_DIR;
+function starterMap(world) {
+  return `// ${world} \u2014 system map. Authored by hand; Topo does not generate this file.
+// Draw your systems, the arrows between them (A --( Thing )--> B), and give each
+// system a \`code "glob"\` line so every source file is owned. Then:
+//   topo check   \u2192 fix drift \u2192 topo approve   (writes system.topo.lock)
+// Full grammar: .claude/skills/topo/MANIFEST.md
+
+world ${world} {
+}
+`;
+}
 function runInit(opts) {
   const root = resolve2(opts.dir ?? process.cwd());
   const cfgFile = join5(root, CONFIG_FILE);
-  if (existsSync8(cfgFile) && !opts.force) {
+  if (existsSync7(cfgFile) && !opts.force) {
     console.error(`topo: ${CONFIG_FILE} already exists in ${root}. Re-run with --force to reinstall.`);
     return 2;
   }
@@ -11067,27 +10259,28 @@ function runInit(opts) {
   const config = { ...base, world: opts.name ?? base.world };
   const log = (s) => console.log(`  ${s}`);
   console.log(`Installing Topo into ${root}`);
-  writeFileSync4(cfgFile, JSON.stringify(config, null, 2) + "\n");
+  writeFileSync2(cfgFile, JSON.stringify(config, null, 2) + "\n");
   log(`wrote ${CONFIG_FILE}`);
-  const { claims, filesScanned } = scanClaims(root, config);
-  const world = regenerate(claims, null, { worldName: config.world });
-  const header = `// ${config.world} \u2014 system map. Generated by topo from //@topo markers.`;
-  writeFileSync4(mapPath(root, config), serializeTopos(world, { header }));
-  const systemCount = Object.keys(world.systems).length - 1;
-  log(`generated ${config.map} (world '${config.world}', ${systemCount} systems from ${filesScanned} files)`);
-  const skillDir = join5(root, ".claude", "skills", "topo-sync");
+  const mp = mapPath(root, config);
+  if (!existsSync7(mp)) {
+    writeFileSync2(mp, starterMap(config.world));
+    log(`scaffolded ${config.map} (empty \u2014 author it by hand)`);
+  } else {
+    log(`${config.map} already exists (kept)`);
+  }
+  const skillDir = join5(root, ".claude", "skills", "topo");
   mkdirSync(skillDir, { recursive: true });
   copyFileSync(join5(ASSETS, "skill", "SKILL.md"), join5(skillDir, "SKILL.md"));
-  copyFileSync(join5(ASSETS, "MARKERS.md"), join5(skillDir, "MARKERS.md"));
-  log(`installed .claude/skills/topo-sync/{SKILL,MARKERS}.md`);
+  copyFileSync(join5(ASSETS, "MANIFEST.md"), join5(skillDir, "MANIFEST.md"));
+  log(`installed .claude/skills/topo/{SKILL,MANIFEST}.md`);
   const claudeMd = join5(root, "CLAUDE.md");
-  const note = readFileSync7(join5(ASSETS, "claude-rule.md"), "utf8");
-  if (!existsSync8(claudeMd)) {
-    writeFileSync4(claudeMd, `# ${config.world}
+  const note = readFileSync6(join5(ASSETS, "claude-rule.md"), "utf8");
+  if (!existsSync7(claudeMd)) {
+    writeFileSync2(claudeMd, `# ${config.world}
 
 ${note}`);
     log(`created CLAUDE.md with the Topo rule note`);
-  } else if (!readFileSync7(claudeMd, "utf8").includes("## Topo system map")) {
+  } else if (!readFileSync6(claudeMd, "utf8").includes("## Topo system map")) {
     appendFileSync(claudeMd, `
 ${note}`);
     log(`appended the Topo rule note to CLAUDE.md`);
@@ -11096,13 +10289,13 @@ ${note}`);
   }
   if (opts.hook !== false) {
     const hooksDir = join5(root, ".git", "hooks");
-    if (existsSync8(hooksDir)) {
+    if (existsSync7(hooksDir)) {
       const hookFile = join5(hooksDir, "pre-commit");
-      if (!existsSync8(hookFile)) {
+      if (!existsSync7(hookFile)) {
         copyFileSync(join5(ASSETS, "pre-commit"), hookFile);
         chmodSync(hookFile, 493);
         log(`installed .git/hooks/pre-commit (drift blocker)`);
-      } else if (!readFileSync7(hookFile, "utf8").includes("Topo drift guard")) {
+      } else if (!readFileSync6(hookFile, "utf8").includes("Topo drift guard")) {
         appendFileSync(
           hookFile,
           `
@@ -11118,31 +10311,26 @@ if command -v topo >/dev/null 2>&1; then topo check || exit 1; else npx --no-ins
       log(`no .git/hooks found \u2014 skipped the pre-commit hook`);
     }
   }
-  if (systemCount === 0) {
-    console.log("\nNo //@topo markers found yet \u2014 the map is empty. To fill it in:");
-    console.log("  1. Read  .claude/skills/topo-sync/SKILL.md  (the loop + marker grammar)");
-    console.log("  2. Add   //@topo markers to the systems in your code");
-    console.log("  3. Run   topo sync    \u2014 writes the live map from your markers");
-    console.log("  4. Run   topo check   \u2014 must be green before you commit");
-    console.log("     then  topo view    \u2014 watch the live map in your browser");
-    console.log(`
+  console.log(`
+Next \u2014 author the map (world '${config.world}'):`);
+  console.log("  1. Read  .claude/skills/topo/SKILL.md   (the loop + how to author the manifest)");
+  console.log(`  2. Edit  ${config.map}   \u2014 draw your systems + arrows, and add a`);
+  console.log('           code "glob" to each so every source file is owned');
+  console.log("  3. Run   topo check     \u2014 lists uncovered files + what to fix");
+  console.log("  4. Run   topo approve   \u2014 records the approved snapshot (system.topo.lock)");
+  console.log("     then  topo view      \u2014 watch the live map in your browser");
+  console.log(`
   (World name is '${config.world}'. Re-run with --name <World> to change it.)`);
-  } else {
-    console.log("\nDone. Next:");
-    console.log("  \u2022 topo check   \u2014 verify the map matches the markers (must be green)");
-    console.log("  \u2022 topo view    \u2014 watch the live map in your browser");
-    console.log("  \u2022 as you code: update //@topo markers, then 'topo sync' to refresh the map");
-  }
   return 0;
 }
 
 // src/cli/commands/view.ts
-import { existsSync as existsSync10 } from "node:fs";
+import { existsSync as existsSync9 } from "node:fs";
 import { spawn } from "node:child_process";
 
 // src/server/view-server.ts
 import { createServer } from "node:http";
-import { readFileSync as readFileSync8, existsSync as existsSync9, statSync } from "node:fs";
+import { readFileSync as readFileSync7, existsSync as existsSync8, statSync } from "node:fs";
 import { join as join8, extname as extname2, resolve as resolve5 } from "node:path";
 
 // node_modules/chokidar/esm/index.js
@@ -11874,9 +11062,9 @@ var NodeFsHandler = class {
     if (this.fsw.closed) {
       return;
     }
-    const dirname4 = sysPath.dirname(file);
+    const dirname5 = sysPath.dirname(file);
     const basename4 = sysPath.basename(file);
-    const parent = this.fsw._getWatchedDir(dirname4);
+    const parent = this.fsw._getWatchedDir(dirname5);
     let prevStats = stats;
     if (parent.has(basename4))
       return;
@@ -11903,7 +11091,7 @@ var NodeFsHandler = class {
             prevStats = newStats2;
           }
         } catch (error) {
-          this.fsw._remove(dirname4, basename4);
+          this.fsw._remove(dirname5, basename4);
         }
       } else if (parent.has(basename4)) {
         const at = newStats.atimeMs;
@@ -12875,20 +12063,20 @@ function startViewServer(root, config, port) {
   };
   const readMap = () => {
     const mp = mapPath(root, config);
-    return existsSync9(mp) ? readFileSync8(mp, "utf8") : "";
+    return existsSync8(mp) ? readFileSync7(mp, "utf8") : "";
   };
   const computeReport = () => {
-    const { claims, filesScanned } = scanClaims(root, config);
     const mp = mapPath(root, config);
-    const world = existsSync9(mp) ? parseTopos(readFileSync8(mp, "utf8")).world : null;
-    return compare(claims, world ?? null, { strict: config.check.strict, filesScanned });
-  };
-  const draftPayload = () => {
-    const dp = draftPath(root, config);
-    return existsSync9(dp) ? { type: "draft", base: "", draftSource: readFileSync8(dp, "utf8") } : { type: "draft", cleared: true };
+    if (!existsSync8(mp)) return null;
+    const text = readFileSync7(mp, "utf8");
+    const { world } = parseTopos(text);
+    if (!world) return null;
+    const snapshot = buildSnapshot(root, config, world, text);
+    const lock = readLock(root, config);
+    return checkSnapshot(config, world, snapshot, lock, { strict: config.check.strict });
   };
   const serveIndex = (res) => {
-    let html = readFileSync8(join8(DIST, "index.html"), "utf8");
+    let html = readFileSync7(join8(DIST, "index.html"), "utf8");
     html = html.replace("</head>", "<script>window.__TOPO_LIVE__=true</script></head>");
     res.writeHead(200, { "Content-Type": "text/html" });
     res.end(html);
@@ -12896,12 +12084,12 @@ function startViewServer(root, config, port) {
   const serveStatic = (urlPath, res) => {
     const rel = urlPath === "/" ? "/index.html" : urlPath;
     const file = resolve5(join8(DIST, rel));
-    if (!file.startsWith(DIST) || !existsSync9(file) || statSync(file).isDirectory()) {
+    if (!file.startsWith(DIST) || !existsSync8(file) || statSync(file).isDirectory()) {
       return serveIndex(res);
     }
     if (rel === "/index.html") return serveIndex(res);
     res.writeHead(200, { "Content-Type": MIME[extname2(file)] ?? "application/octet-stream" });
-    res.end(readFileSync8(file));
+    res.end(readFileSync7(file));
   };
   const server = createServer((req, res) => {
     const urlPath = (req.url ?? "/").split("?")[0];
@@ -12911,7 +12099,6 @@ function startViewServer(root, config, port) {
       clients.add(res);
       send(res, { type: "map", source: readMap() });
       send(res, { type: "report", report: computeReport() });
-      send(res, draftPayload());
       req.on("close", () => clients.delete(res));
       return;
     }
@@ -12924,12 +12111,7 @@ function startViewServer(root, config, port) {
       return res.end(JSON.stringify(computeReport()));
     }
     if (urlPath === "/approve" && req.method === "POST") {
-      runApprove({ dir: root });
-      res.writeHead(200);
-      return res.end("ok");
-    }
-    if (urlPath === "/reject" && req.method === "POST") {
-      runApprove({ dir: root, reject: true });
+      runApprove({ dir: root, confirm: true });
       res.writeHead(200);
       return res.end("ok");
     }
@@ -12938,7 +12120,6 @@ function startViewServer(root, config, port) {
   const watcher = watchRepo(root, () => {
     broadcast({ type: "map", source: readMap() });
     broadcast({ type: "report", report: computeReport() });
-    broadcast(draftPayload());
   });
   server.listen(port);
   return {
@@ -12961,7 +12142,7 @@ function openBrowser(url) {
 }
 function runView(opts) {
   const { root, config } = loadConfig(opts.dir ?? process.cwd());
-  if (!existsSync10(mapPath(root, config))) {
+  if (!existsSync9(mapPath(root, config))) {
     console.error(`topo: no ${config.map} found in ${root}. Run 'topo init' first.`);
     process.exit(2);
   }
@@ -12981,11 +12162,9 @@ function runView(opts) {
 // src/cli/index.ts
 var program2 = new Command();
 program2.name("topo").description("Topo Repo Toolchain \u2014 build & maintain an accurate system map").version("0.1.0");
-program2.command("check").description("Scan markers, compare to the map, report drift (the hard blocker)").option("--dir <path>", "repo directory").option("--json", "machine-readable report").option("--strict", "promote warnings to failures").option("--no-cache", "ignore the scan cache").action((o) => process.exit(runCheck({ dir: o.dir, json: o.json, strict: o.strict })));
-program2.command("sync").alias("regen").description("Regenerate the live map from markers \u2014 the agent loop to get check green").option("--dir <path>", "repo directory").option("--json", "machine-readable summary").action((o) => process.exit(runSync({ dir: o.dir, json: o.json })));
-program2.command("propose").description("Write a draft map (system.draft.topo) for a human to review & approve").option("--dir <path>", "repo directory").option("--json", "machine-readable summary").action((o) => process.exit(runRegen({ dir: o.dir, json: o.json })));
-program2.command("approve").description("Promote the draft map to live (or --reject to discard)").option("--dir <path>", "repo directory").option("--reject", "discard the draft instead of approving").action((o) => process.exit(runApprove({ dir: o.dir, reject: o.reject })));
-program2.command("init").description("Install Topo into a repo: scaffold the map, skill, rule note, hook").option("--dir <path>", "repo directory").option("--name <world>", "world name (defaults to the repo folder name)").option("--force", "overwrite an existing install").option("--no-hook", "skip installing the pre-commit hook").action((o) => process.exit(runInit({ dir: o.dir, name: o.name, force: o.force, hook: o.hook })));
+program2.command("check").description("Hash the declared code regions, diff against the lock, report drift (the hard blocker)").option("--dir <path>", "repo directory").option("--json", "machine-readable report").option("--strict", "promote warnings to failures").action((o) => process.exit(runCheck({ dir: o.dir, json: o.json, strict: o.strict })));
+program2.command("approve").argument("[systems...]", "re-lock only these systems (default: the whole repo)").description("Record the current code + map as approved \u2014 writes the lockfile, reaching green").option("--dir <path>", "repo directory").option("--confirm", "required under the 'human' approval policy").option("--json", "machine-readable summary").action((systems, o) => process.exit(runApprove({ dir: o.dir, systems, confirm: o.confirm, json: o.json })));
+program2.command("init").description("Install Topo into a repo: scaffold the manifest, skill, rule note, hook").option("--dir <path>", "repo directory").option("--name <world>", "world name (defaults to the repo folder name)").option("--force", "overwrite an existing install").option("--no-hook", "skip installing the pre-commit hook").action((o) => process.exit(runInit({ dir: o.dir, name: o.name, force: o.force, hook: o.hook })));
 program2.command("view").description("Start the live viewer: watch the map and serve it in the browser").option("--dir <path>", "repo directory").option("--port <n>", "port", (v) => parseInt(v, 10)).option("--open", "open the browser").action((o) => runView({ dir: o.dir, port: o.port, open: o.open }));
 program2.parseAsync(process.argv).catch((err) => {
   console.error(`topo: ${err instanceof Error ? err.message : String(err)}`);

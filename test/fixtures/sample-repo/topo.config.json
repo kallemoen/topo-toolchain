@@ -1,1 +1,0 @@
-{ "world": "SampleApp", "map": "system.topo", "draft": "system.draft.topo", "include": ["**/*"], "ignore": [], "viewer": { "port": 4517 }, "check": { "strict": false } }

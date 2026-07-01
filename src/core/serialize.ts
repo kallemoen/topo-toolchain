@@ -72,8 +72,9 @@ function emitSystem(
   for (const t of sys.ins) out.push(`${i2}in ${t}`)
   for (const t of sys.outs) out.push(`${i2}out ${t}`)
   for (const t of sys.holds) out.push(`${i2}holds ${t}`)
+  for (const g of sys.codePaths) out.push(`${i2}code "${g}"`)
 
-  const hadBoundary = sys.ins.length + sys.outs.length + sys.holds.length > 0
+  const hadBoundary = sys.ins.length + sys.outs.length + sys.holds.length + sys.codePaths.length > 0
   if (hadBoundary && sys.children.length) out.push('')
 
   sys.children.forEach((child, idx) => {

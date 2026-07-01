@@ -1,13 +1,15 @@
-// check.ts — `topo check`: scan markers, compare to the map, report drift.
-// Exit 0 = in sync, 1 = drift, 2 = usage/IO error. The hard blocker.
+// check.ts — `topo check`: the hard blocker.
+// Parses the manifest, hashes each declared code region, and diffs against the
+// lock while enforcing coverage. Exit 0 = in sync, 1 = drift, 2 = usage/IO error.
 
 import { readFileSync, existsSync } from 'node:fs'
 import { loadConfig } from '../../core/config'
 import { mapPath } from '../../core/paths'
-import { scanClaims } from '../../core/markers/scan'
-import { parseTopos, type ToposWorld } from '../../core/topos'
-import { compare } from '../../core/compare/compare'
-import { renderHuman } from '../../core/compare/report'
+import { parseTopos } from '../../core/topos'
+import { buildSnapshot } from '../../core/coverage/snapshot'
+import { readLock } from '../../core/coverage/lock'
+import { checkSnapshot } from '../../core/coverage/check'
+import { renderReport } from '../../core/coverage/report'
 
 export interface CheckOptions {
   dir?: string
@@ -17,21 +19,23 @@ export interface CheckOptions {
 
 export function runCheck(opts: CheckOptions): number {
   const { root, config } = loadConfig(opts.dir ?? process.cwd())
-  const { claims, filesScanned } = scanClaims(root, config)
-
   const mp = mapPath(root, config)
-  let priorWorld: ToposWorld | null = null
-  if (existsSync(mp)) {
-    const { world, error } = parseTopos(readFileSync(mp, 'utf8'))
-    if (error || !world) {
-      console.error(`topo: failed to parse ${config.map}: ${error ?? 'no world found'}`)
-      return 2
-    }
-    priorWorld = world
+  if (!existsSync(mp)) {
+    console.error(`topo: no ${config.map} found. Run 'topo init', then author the map.`)
+    return 2
+  }
+  const text = readFileSync(mp, 'utf8')
+  const { world, error } = parseTopos(text)
+  if (error || !world) {
+    console.error(`topo: failed to parse ${config.map}: ${error ?? 'no world found'}`)
+    return 2
   }
 
-  const report = compare(claims, priorWorld, { strict: opts.strict, filesScanned })
+  const snapshot = buildSnapshot(root, config, world, text)
+  const lock = readLock(root, config)
+  const report = checkSnapshot(config, world, snapshot, lock, { strict: opts.strict })
+
   if (opts.json) console.log(JSON.stringify(report, null, 2))
-  else console.log(renderHuman(report))
+  else console.log(renderReport(report))
   return report.passed ? 0 : 1
 }

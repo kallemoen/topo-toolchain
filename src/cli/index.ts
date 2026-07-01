@@ -1,12 +1,10 @@
 // topo — the Topo Repo Toolchain CLI.
-// Keeps an accurate Topo system map in sync with code: markers in code are the
-// source of truth, the .topo map is regenerated from them, and `topo check` is a
-// hard blocker until code, markers, and map agree.
+// The `.topo` manifest is a hand-authored map whose systems declare the code they
+// own (`code "glob"`). `topo check` hashes those regions and blocks on drift;
+// `topo approve` records the approved snapshot in the lockfile.
 
 import { Command } from 'commander'
 import { runCheck } from './commands/check'
-import { runSync } from './commands/sync'
-import { runRegen } from './commands/regen'
 import { runApprove } from './commands/approve'
 import { runInit } from './commands/init'
 import { runView } from './commands/view'
@@ -19,38 +17,24 @@ program
 
 program
   .command('check')
-  .description('Scan markers, compare to the map, report drift (the hard blocker)')
+  .description('Hash the declared code regions, diff against the lock, report drift (the hard blocker)')
   .option('--dir <path>', 'repo directory')
   .option('--json', 'machine-readable report')
   .option('--strict', 'promote warnings to failures')
-  .option('--no-cache', 'ignore the scan cache')
   .action((o) => process.exit(runCheck({ dir: o.dir, json: o.json, strict: o.strict })))
 
 program
-  .command('sync')
-  .alias('regen')
-  .description('Regenerate the live map from markers — the agent loop to get check green')
-  .option('--dir <path>', 'repo directory')
-  .option('--json', 'machine-readable summary')
-  .action((o) => process.exit(runSync({ dir: o.dir, json: o.json })))
-
-program
-  .command('propose')
-  .description('Write a draft map (system.draft.topo) for a human to review & approve')
-  .option('--dir <path>', 'repo directory')
-  .option('--json', 'machine-readable summary')
-  .action((o) => process.exit(runRegen({ dir: o.dir, json: o.json })))
-
-program
   .command('approve')
-  .description('Promote the draft map to live (or --reject to discard)')
+  .argument('[systems...]', 're-lock only these systems (default: the whole repo)')
+  .description('Record the current code + map as approved — writes the lockfile, reaching green')
   .option('--dir <path>', 'repo directory')
-  .option('--reject', 'discard the draft instead of approving')
-  .action((o) => process.exit(runApprove({ dir: o.dir, reject: o.reject })))
+  .option('--confirm', "required under the 'human' approval policy")
+  .option('--json', 'machine-readable summary')
+  .action((systems, o) => process.exit(runApprove({ dir: o.dir, systems, confirm: o.confirm, json: o.json })))
 
 program
   .command('init')
-  .description('Install Topo into a repo: scaffold the map, skill, rule note, hook')
+  .description('Install Topo into a repo: scaffold the manifest, skill, rule note, hook')
   .option('--dir <path>', 'repo directory')
   .option('--name <world>', 'world name (defaults to the repo folder name)')
   .option('--force', 'overwrite an existing install')

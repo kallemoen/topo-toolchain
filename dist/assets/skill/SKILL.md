@@ -1,100 +1,64 @@
 ---
-name: topo-sync
-description: Keep the Topo system map in sync with code. Use after any change that adds, removes, renames, or rewires a system/activity/storage/gateway, or whenever `topo check` is red. The check is a hard blocker — do not finish until it passes.
+name: topo
+description: Keep the Topo system map (system.topo) accurate. Use after any change that adds, removes, renames, or rewires a system — or moves the code a system owns — and whenever `topo check` is red. The check is a hard blocker; do not finish until it passes. Never add comments to source code.
 ---
 
-# Keep the Topo map in sync
+# Keep the Topo map accurate
 
-This repo's architecture is a Topo map (`system.topo`). The **source of truth for
-structure is `//@topo` markers embedded in the code**; the map is regenerated from
-them with `topo sync`. `topo check` is a HARD BLOCKER: do not finish a task while
-it is red.
+This repo's architecture is a **hand-authored manifest**, `system.topo`. You write
+the whole design in it — the systems, the arrows between them, and **which code each
+system owns** (via `code "glob"` lines). Topo hashes the owned code into
+`system.topo.lock` and `topo check` fails on drift. `topo check` is a HARD BLOCKER:
+do not finish a task while it is red.
 
-You have everything you need below — you should NOT need to read the tool's source.
-For the full marker reference see `MARKERS.md` next to this file.
-
-## First run — marking up a repo from scratch
-
-If the map is empty (a fresh `topo init`), survey the codebase and place the
-initial markers, then run the loop below:
-
-1. Find the **significant systems** — the parts a new engineer would draw on a
-   whiteboard: services, apps, modules/packages, background jobs, datastores,
-   and the external dependencies you call (payment, auth, email, third-party
-   APIs). Skip trivial helpers, types, and glue.
-2. For each, add a `//@topo` marker **in the file that implements it** (grammar
-   below): `system` for a container, `activity`/`storage` for leaves, `gateway`
-   for external deps. Name the data crossing each edge with `in`/`out`/`holds` —
-   that's what wires systems together (connections are derived, never written).
-3. Run `topo sync`, then `topo check`, and iterate until green — same loop as
-   maintenance. Start coarse (top-level systems) and refine; you don't have to
-   mark everything at once.
+**Never write `//@topo` comments or any Topo markers in source code.** All structure
+lives in `system.topo`. The full grammar is in `MANIFEST.md` next to this file.
 
 ## The loop (do this — it always converges)
 
 1. Make your code change.
-2. Add/update the `//@topo` markers in the files you touched (grammar below).
-3. Run **`topo sync`** — regenerates the live `system.topo` from the markers.
-4. Run **`topo check`** — must be green (exit 0). If red, read each entry (it names
-   the system + `file:line` + a fix), correct the markers, and go back to step 3.
-5. Commit code + markers + `system.topo` together.
+2. Open `system.topo` and make it match reality: add/rename/rewire systems, update
+   the `--( )-->` arrows, and adjust each system's `code "glob"` so every file stays
+   owned by the right system.
+3. Run **`topo check`**. Read each entry (it names the file/system + a fix) and
+   resolve them all:
+   - `uncovered-code` → a file no system owns. Extend the owning system's `code`
+     glob, or add the file to `ignore` in `topo.config.json` if it isn't a system.
+   - `region-changed` → the code under a system changed. Confirm the diagram still
+     reflects it; update `system.topo` if the structure moved.
+   - `dangling-code` → a glob matches nothing. Fix or remove it.
+   - `ambiguous-ownership` → two globs claim a file equally. Make one more specific.
+   - `manifest-unapproved` → you edited the map (or there's no lock yet). Approve it.
+4. Run **`topo approve`** — records the current map + code as the approved snapshot
+   (writes `system.topo.lock`). `topo check` is now green.
+5. Commit `system.topo`, `system.topo.lock`, and your code together.
 
-`topo sync` is the normal loop. (`topo propose` writes a *draft* for a human to
-`topo approve` — use that only when you specifically want a human to review a
-structural change before it lands. Do NOT run `topo approve` yourself.)
+`topo approve <System…>` re-locks only those systems (keep the rest) when you only
+touched one area.
 
-## Marker grammar (comments — they never affect runtime)
+> If `topo.config.json` sets `policy.approval` to `"human"`, do NOT run `topo approve`
+> yourself — leave the review to a person (they run `topo approve --confirm` or use
+> the viewer). Otherwise (the default `"agent"`), run it as step 4.
 
-Use the host language's comment opener; the payload always begins with `@topo`.
-**The keyword is the kind.** Put the marker in the file that implements the system.
+## First run — authoring the map from scratch
 
-```
-//@topo system   <Name> [parent=<Parent>]   # an OPEN container (has children)
-//@topo activity <Name> [parent=<Parent>]   # a leaf that does something
-//@topo storage  <Name> [parent=<Parent>]   # a leaf that holds things
-//@topo gateway  <Name>                       # an external dependency (Stripe, DB, …)
-//@topo in <Thing>      # a kind of data the system accepts
-//@topo out <Thing>     # a kind of data the system emits
-//@topo holds <Thing>   # (storage only) the kind of data it stores
-```
+If `system.topo` is just the empty `world { }` scaffold:
 
-### Rules that will bite you if you miss them
-
-- **Names and Things are single identifiers** — letters/digits/underscore, **no
-  spaces** (`PaymentApi`, `ChargeEvent` — not `Payment API`). One word per name.
-- **Boundaries bind to the nearest preceding `@topo` system marker in the same
-  file.** Put each `in`/`out`/`holds` line directly under the system it belongs to.
-- **Connections are DERIVED, never written by hand.** If system A declares
-  `out Charge` and system B declares `in Charge`, Topo draws `A --( Charge )--> B`
-  automatically. To wire two systems, give them a shared Thing name on `out`/`in`.
-- **Leaf `activity`/`storage` should have `parent=`** (the open `system` they live
-  in). Without it they attach at the world root and raise a non-blocking warning.
-- **`gateway`** marks something external you don't own — markers on it are optional;
-  it's fine to declare just `gateway Stripe` with the Things that cross it.
-- **World name** defaults to the repo folder name. Run `topo init --name <World>` to
-  set it (or edit `world` in `topo.config.json` before the first `topo sync`).
-
-### Example (a payments module across two files)
-
-```ts
-// payments/charges.ts
-//@topo activity Charges parent=Payments
-//@topo in Order
-//@topo out Charge
-```
-```ts
-// payments/ledger.ts
-//@topo storage Ledger parent=Payments
-//@topo holds Charge          // emits Charge → Topo wires Charges → Ledger
-```
-```ts
-// payments/index.ts
-//@topo system Payments        // the open container Charges + Ledger live in
-```
+1. **Design top-down.** Identify the significant systems — the parts a new engineer
+   would draw on a whiteboard: services, apps, modules, jobs, datastores, and the
+   external dependencies you call (`gateway`). Write them as nested `system` /
+   `activity` / `storage` / `gateway` blocks. Don't annotate code — compose the
+   whole picture here.
+2. **Draw the arrows.** Add `A --( Thing )--> B` connections for the real data flows.
+3. **Assign the code.** Give each system a `code "glob"` so that **every** source
+   file is owned (coverage is whole-repo strict by default). Start with broad
+   directory globs, then refine.
+4. Run `topo check` until only `manifest-unapproved` remains, then `topo approve`.
 
 ## Hard rules
 
-- NEVER hand-edit `system.topo` to silence the check — fix the markers, run `topo sync`.
+- NEVER write `//@topo` markers or any Topo comment in source files.
 - NEVER finish a task with `topo check` red.
-- NEVER run `topo approve` yourself — promoting a draft is the human's decision.
-- Markers are comments: they must not change how the code runs.
+- NEVER hand-edit `system.topo.lock` — it's produced by `topo approve`.
+- Keep the diagram honest: if you can't draw it cleanly, the design is telling you
+  something — fix the map to match reality, don't paper over it.

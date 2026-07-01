@@ -1,51 +1,38 @@
-// Shared toolchain types — the data shapes that flow between scan, compare, regen.
-// These mirror the meta-model in topo-toolchain.topo (MarkerClaim, DriftReport, ...).
+// Shared toolchain types — the shapes that flow between coverage, digest, and check.
 
-import type { Kind } from './topos'
-
-/** A marker's kind is the same closed/open vocabulary as Topo (minus 'world'). */
-export type MarkerKind = Exclude<Kind, 'world'>
-
-export interface MarkerLocation {
+export interface SourceLocation {
   file: string // repo-relative POSIX path
-  line: number // 1-based, the line of the `@topo <kind> <Name>` declaration
+  line?: number // 1-based, when the entry points at a specific line
 }
 
-/** The normalized structural claim a piece of code makes about itself. */
-export interface MarkerClaim {
-  system: string
-  kind: MarkerKind
-  open: boolean // true ⇒ a container (kind === 'system'); false ⇒ a leaf
-  parent: string | null
-  ins: string[]
-  outs: string[]
-  holds: string[]
-  loc: MarkerLocation
-  extraLocs: MarkerLocation[] // same system declared in >1 place → a conflict signal
-}
-
-export type DriftCategory = 'in-code-not-map' | 'in-map-not-code' | 'conflicting' | 'unclear-boundary'
+export type DriftCategory =
+  | 'uncovered-code' // a source file owned by no system (whole-repo coverage)
+  | 'region-changed' // a declared system's code changed since it was last approved
+  | 'dangling-code' // a `code` glob matches no source file
+  | 'ambiguous-ownership' // a file is claimed by two equally-specific globs
+  | 'manifest-unapproved' // system.topo changed (or was never approved) vs the lock
 
 export interface DriftEntry {
   category: DriftCategory
-  system: string
+  system: string // the system involved, or '' when not system-specific
   detail: string
-  location: MarkerLocation | null
+  location: SourceLocation | null
   suggestion: string
+}
+
+export interface CoverageStats {
+  universe: number // source files in scope (config.include minus ignores)
+  covered: number
+  uncovered: number
+  systemsWithCode: number
 }
 
 export interface DriftReport {
   passed: boolean
-  failures: number // blocking entries (excludes warnings unless --strict)
-  warnings: number // unclear-boundary entries (non-blocking by default)
+  failures: number // blocking entries
+  warnings: number // non-blocking entries (promoted to failures under --strict)
   entries: DriftEntry[]
-  generatedAt: string // ISO; excluded from any pass/fail hashing
+  generatedAt: string // ISO; never part of any digest
   scan: { filesScanned: number; systems: number }
-}
-
-/** A Thing whose producer/consumer wiring is ambiguous at a level. */
-export interface Ambiguity {
-  thing: string
-  producers: string[]
-  consumers: string[]
+  coverage: CoverageStats
 }

@@ -18,7 +18,7 @@ run_topo() {
 if ! run_topo check; then
   echo ""
   echo "topo: the system map has drifted from the code. Fix it with:"
-  echo "      update the //@topo markers, then 'topo sync', until 'topo check' is green"
+  echo "      update system.topo, then 'topo approve', until 'topo check' is green"
   echo "      — or bypass this one commit with: git commit --no-verify"
   exit 1
 fi

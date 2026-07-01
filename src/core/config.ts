@@ -3,27 +3,49 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { dirname, join, basename, resolve } from 'node:path'
 
+/** What must be owned by a system for `topo check` to pass. */
+export type CoveragePolicy = 'strict' | 'mapped' | 'off'
+/** Who may write the lock (accept the current code+manifest as truth). */
+export type ApprovalPolicy = 'agent' | 'human'
+/** How a changed already-declared region is treated. */
+export type RegionChangePolicy = 'block' | 'warn'
+
+export interface ToposPolicy {
+  coverage: CoveragePolicy
+  approval: ApprovalPolicy
+  onRegionChange: RegionChangePolicy
+}
+
 export interface ToposConfig {
   world: string // world/root name
-  map: string // path to the live map, relative to repo root
-  draft: string // path to the draft map
-  include: string[] // glob(s) of files to scan
+  map: string // path to the manifest (system.topo), relative to repo root
+  lock: string // path to the digest lockfile (system.topo.lock)
+  include: string[] // glob(s) of source files that must be owned (the coverage universe)
   ignore: string[] // extra ignore globs (on top of .gitignore + built-in deny list)
   viewer: { port: number }
   check: { strict: boolean }
+  policy: ToposPolicy
 }
 
 export const CONFIG_FILE = 'topo.config.json'
+
+// The default coverage universe: common source-code extensions. Whole-repo-strict
+// coverage requires every matched file to be owned by a system, so this is scoped
+// to code (docs/config/data are excluded) and is meant to be tuned per repo.
+const DEFAULT_INCLUDE = [
+  '**/*.{ts,tsx,js,jsx,mjs,cjs,py,go,rs,rb,java,kt,kts,php,cs,swift,scala,c,cc,cpp,h,hh,hpp,m,mm,vue,svelte,sql,sh}',
+]
 
 export function defaultConfig(dir: string): ToposConfig {
   return {
     world: titleCase(basename(resolve(dir))),
     map: 'system.topo',
-    draft: 'system.draft.topo',
-    include: ['**/*'],
+    lock: 'system.topo.lock',
+    include: DEFAULT_INCLUDE,
     ignore: ['dist/**', 'build/**', '**/*.min.*'],
     viewer: { port: 4517 },
     check: { strict: false },
+    policy: { coverage: 'strict', approval: 'agent', onRegionChange: 'block' },
   }
 }
 
@@ -61,6 +83,7 @@ export function loadConfig(dir: string): { root: string; config: ToposConfig } {
         ...parsed,
         viewer: { ...base.viewer, ...(parsed.viewer ?? {}) },
         check: { ...base.check, ...(parsed.check ?? {}) },
+        policy: { ...base.policy, ...(parsed.policy ?? {}) },
       },
     }
   } catch {

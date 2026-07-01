@@ -73,9 +73,10 @@ const KIND_KEYWORDS = new Set<Kind>(['world', 'system', 'activity', 'storage', '
 
 /** Split source into meaningful tokens, dropping comments + whitespace. */
 function tokenize(src: string): string[] {
-  const noComments = src.replace(/\/\/[^\n]*/g, '')
-  const re = /--\(|\)-->|[{}[\]:]|[A-Za-z_][A-Za-z0-9_]*/g
-  return noComments.match(re) ?? []
+  // Quoted strings (for `code "glob"`) are matched atomically and before the
+  // comment alternative, so glob content never leaks into the token stream.
+  const re = /"[^"]*"|\/\/[^\n]*|--\(|\)-->|[{}[\]:]|[A-Za-z_][A-Za-z0-9_]*/g
+  return (src.match(re) ?? []).filter((t) => !t.startsWith('//'))
 }
 
 /** Capture the trailing `// comment` on each system/thing declaration line. */
@@ -173,6 +174,9 @@ export function parseTopos(src: string): ParseResult {
             else if (t === 'out') s.outs.push(ref)
             else s.holds.push(ref)
           }
+        } else if (t === 'code') {
+          next() // `code "glob"` — a code binding; the viewer ignores it
+          next()
         } else {
           // maybe a connection: Name --( Thing )--> Name
           const from = next()

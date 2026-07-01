@@ -17,16 +17,17 @@ Set up Topo in this repo so I can see how it works as a live map.
 
 1. Install the CLI:  npm i -g --install-links github:kallemoen/topo-toolchain
    (Keep the --install-links flag — it's what makes the global install work.)
-2. Run:  topo init   — scaffolds the map + a pre-commit hook and installs the
-   Topo skill at .claude/skills/topo-sync/.
-3. Read .claude/skills/topo-sync/SKILL.md and follow it: add //@topo markers to
-   the significant systems in the code, then run `topo sync` and `topo check`
-   until the check is green. The skill has the full marker grammar — use it,
-   don't guess.
-4. Run:  topo view   so I can watch the live map in my browser.
+2. Run:  topo init   — scaffolds an empty map + a pre-commit hook and installs
+   the Topo skill at .claude/skills/topo/.
+3. Read .claude/skills/topo/SKILL.md and follow it: in system.topo, design the
+   systems and the arrows between them, and give each system a code "glob" line
+   so every source file is owned. Do NOT add comments to my code — the whole map
+   lives in system.topo.
+4. Run `topo check` (fix what it lists), then `topo approve`, until the check is
+   green. Then `topo view` so I can watch the live map in my browser.
 
-Then keep it green: whenever you change structure, update the //@topo markers,
-run `topo sync`, and never finish with `topo check` red.
+Then keep it green: whenever you change structure or move code, update system.topo,
+run `topo approve`, and never finish with `topo check` red.
 ```
 
 No setup, no account, no keys, **no native build** — it installs as plain JS and works in sandboxes. Nothing leaves your repo.
@@ -45,49 +46,50 @@ Run `topo view` and a local map opens in your browser. Open boxes to drill in, f
 
 ## A map that can't lie to you
 
-Most diagrams are wrong within a week. Topo keeps tiny markers next to the code they describe, and a check that fails the moment the map and the code disagree — so your agent fixes it before you ever see a stale picture.
+Most diagrams are wrong within a week. Topo pins each system to the code it owns and hashes that code into a lockfile — so a check fails the moment the map and the code disagree, before you ever see a stale picture.
 
-1. **Markers live in the code.** A one-line `//@topo` comment marks each system, right where it's written. Move the code, the marker moves with it.
-2. **The check is the gate.** `topo check` compares code to map and fails on any drift — pointing at the exact `file:line`. Wire it into a pre-commit hook and "done" requires a green map.
-3. **Your agent keeps it green.** An installed skill + rule make updating the map non-optional. The agent loops fix markers → `topo sync` → `topo check` until it's green — no human in the loop. (A `propose`/`approve` review gate is there when you *want* to eyeball a change first.)
+1. **One manifest, authored top-down.** `system.topo` holds the whole design — the systems, the arrows between them, and a `code "glob"` naming the files each system owns. Your agent writes it as a whole, not comment-by-comment. **No markers in your code.**
+2. **The check is the gate.** `topo check` re-hashes every owned region and fails on any drift: code no system owns, a region whose code changed, or a glob pointing at nothing — naming the exact file. Wire it into a pre-commit hook and "done" requires a green map.
+3. **Your agent keeps it green.** An installed skill + rule make updating the map non-optional. The agent loops update `system.topo` → `topo check` → `topo approve` until it's green — no human in the loop. The `system.topo` + `system.topo.lock` diff in the PR is the review surface.
 
-## How your agent marks it up
+## How your agent maps it
 
-You don't write these by hand — the agent does. It tags each system where it lives, names the data crossing its edges, and **Topo derives the connections for you**: one part's `out` meeting another's `in` becomes an arrow.
+Your agent writes one file, `system.topo` — no comments in your code. It draws the systems, draws the arrows between them deliberately, and declares which files each system owns:
 
-```ts
-// payments/charge.ts — a one-line tag, next to the code
-//@topo activity Charges parent=Payments
-//@topo out Charge
+```
+system Payments {
+  code "src/payments/**"           // the files this system owns
+  activity Charges { }
+  storage Ledger { }
+  Charges --( Charge )--> Ledger   // you draw the arrows, not a heuristic
+}
 ```
 
-`Charges` becomes a box on the map, wired by its boundary. Anything that emits `Charge` now points into whatever accepts `Charge` — automatically. Connections are **derived, never hand-drawn**.
+Topo hashes the files under each `code` glob into `system.topo.lock`. Add or change code a system owns and the check flags it — so the picture stays honest, while the design stays something a person authored, not something scraped from fragments.
 
-## Six commands. That's the whole tool.
+## Four commands. That's the whole tool.
 
-The everyday loop is just `sync` → `check`. `propose`/`approve` are an optional human-review gate.
+The everyday loop is `check` → `approve`.
 
 | Command | What it does | Exit |
 |---|---|---|
-| `topo init` | Drop the tool in: scaffold the map, the agent skill + rule, and a pre-commit hook. Idempotent, never clobbers. | `0` / `2` |
-| `topo sync` | Regenerate the live map from the code markers. The agent's normal loop to reach a green check. | `0` / `2` |
-| `topo check` | Compare code to map and report drift. The gate that keeps the picture honest. | `0` sync · `1` drift · `2` error |
+| `topo init` | Drop the tool in: scaffold the manifest, the agent skill + rule, and a pre-commit hook. Idempotent, never clobbers. | `0` / `2` |
+| `topo check` | Hash the declared code regions, diff against the lock, report drift. The gate that keeps the picture honest. | `0` sync · `1` drift · `2` error |
+| `topo approve` | Record the current map + code as approved — writes `system.topo.lock`, reaching green. `topo approve <System…>` re-locks just those. | `0` / `2` |
 | `topo view` | Open the live map in your browser — the part you actually look at. Redraws on every save. | `0` / `2` |
-| `topo propose` | *(optional)* Regenerate to a **draft** map instead of live, for a human to review. | `0` / `2` |
-| `topo approve` | *(optional)* Accept the draft as the live map (or `--reject` to discard). | `0` / `1` / `2` |
 
-## The map vs. the markers
+## The manifest and the lock
 
-- **Markers** carry structure: which systems exist, their kind, open/closed, parent, and boundary (`in`/`out`/`holds`).
-- **The `.topo` map** keeps the design judgment markers can't: thing field schemas, gateway identity, grouping, descriptions, and explicit connection overrides.
+- **`system.topo`** is the manifest you author: the systems, the arrows, and each system's `code "glob"`. It is the design *and* the code map, in one place.
+- **`system.topo.lock`** is generated by `topo approve`: every owned file's hash, rolled up per system, plus a hash of the manifest. Commit it — the diff is exactly what changed and what was re-approved.
 
-Regeneration **merges** — markers drive structure while the map's design choices are preserved. That collapses "three things that can disagree" (code, markers, map) into one mechanical check.
+Coverage is whole-repo by default (every source file must be owned) and tunable in `topo.config.json` under `policy` — loosen coverage, or require a human to run `topo approve`.
 
 ## Notes
 
 - **Bring your own AI.** Topo ships no model and manages no keys — it's the mechanical referee your agent acts on.
 - **Local-only.** The viewer and check run on your machine; nothing leaves the repo.
-- **Language-agnostic.** Markers are found by simple comment-pattern matching, so they work in any language and never affect runtime.
+- **No comments in your code.** The whole map lives in `system.topo`; systems own files by glob, so it works in any language and never touches your source.
 - **Requires Node ≥ 20.** The viewer is prebuilt and committed, so `topo view` runs with no build step.
 
 ## Develop
@@ -96,7 +98,7 @@ Regeneration **merges** — markers drive structure while the map's design choic
 git clone https://github.com/kallemoen/topo-toolchain && cd topo-toolchain
 npm install
 npm run typecheck      # tsc --noEmit
-npm test               # vitest (grammar, scan, serialize round-trip, compare, merge)
+npm test               # vitest (serialize round-trip, coverage/ownership, digest + lock)
 npm run topo -- check --dir <repo>     # run the CLI from source via tsx
 npm run build:viewer   # rebuild the viewer bundle into src/assets/viewer-dist
 npm run build          # bundle the CLI → dist/topo.mjs (commit this before pushing)

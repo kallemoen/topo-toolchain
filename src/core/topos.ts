@@ -11,6 +11,7 @@
 //   system Name { ... }                      // open system (has children)
 //   activity|storage|gateway Name { ... }    // closed systems (leaves)
 //   in Thing | out Thing | holds Thing       // boundary
+//   code "glob"                              // source files this system owns
 //   A --( Thing )--> B                        // a connection
 
 export type Kind = 'world' | 'system' | 'activity' | 'storage' | 'gateway'
@@ -48,6 +49,7 @@ export interface ToposSystem {
   ins: string[]
   outs: string[]
   holds: string[]
+  codePaths: string[] // glob(s) of source files this system owns (the code binding)
   desc?: string // trailing // comment on the declaration line, if any
 }
 
@@ -71,11 +73,12 @@ export interface ParseResult {
 
 const KIND_KEYWORDS = new Set<Kind>(['world', 'system', 'activity', 'storage', 'gateway'])
 
-/** Split source into meaningful tokens, dropping comments + whitespace. */
+/** Split source into meaningful tokens, dropping comments + whitespace.
+ * Quoted strings (for `code "glob"`) are matched atomically and BEFORE the
+ * comment alternative, so a `//` inside a glob is never mistaken for a comment. */
 function tokenize(src: string): string[] {
-  const noComments = src.replace(/\/\/[^\n]*/g, '')
-  const re = /--\(|\)-->|[{}[\]:]|[A-Za-z_][A-Za-z0-9_]*/g
-  return noComments.match(re) ?? []
+  const re = /"[^"]*"|\/\/[^\n]*|--\(|\)-->|[{}[\]:]|[A-Za-z_][A-Za-z0-9_]*/g
+  return (src.match(re) ?? []).filter((t) => !t.startsWith('//'))
 }
 
 /** Capture the trailing `// comment` on each system/thing declaration line. */
@@ -144,6 +147,7 @@ export function parseTopos(src: string): ParseResult {
         ins: [],
         outs: [],
         holds: [],
+        codePaths: [],
         desc: descByName[name],
       }
       systems[name] = sys
@@ -173,6 +177,11 @@ export function parseTopos(src: string): ParseResult {
             else if (t === 'out') s.outs.push(ref)
             else s.holds.push(ref)
           }
+        } else if (t === 'code') {
+          next()
+          const raw = next()
+          const s = systems[owner]
+          if (s && raw) s.codePaths.push(raw.startsWith('"') ? raw.slice(1, -1) : raw)
         } else {
           // maybe a connection: Name --( Thing )--> Name
           const from = next()

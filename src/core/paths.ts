@@ -7,12 +7,8 @@ export function mapPath(root: string, cfg: ToposConfig): string {
   return join(root, cfg.map)
 }
 
-export function draftPath(root: string, cfg: ToposConfig): string {
-  return join(root, cfg.draft)
-}
-
-export function draftMetaPath(root: string, cfg: ToposConfig): string {
-  return `${draftPath(root, cfg)}.meta.json`
+export function lockPath(root: string, cfg: ToposConfig): string {
+  return join(root, cfg.lock)
 }
 
 export const CACHE_DIR = '.topo'
