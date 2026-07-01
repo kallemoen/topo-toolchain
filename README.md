@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/topo-banner.png" alt="topo /toolchain — See how your codebase really works" width="100%" />
+  <img src="docs/topo-banner-v2.png" alt="topo /toolchain — See how your codebase really works" width="100%" />
 </p>
 
 # Drop it into any repo and your coding agent draws a live map of every system — kept in sync with the code as it changes.
