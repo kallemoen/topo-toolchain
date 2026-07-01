@@ -12,6 +12,10 @@ const LABEL: Record<DriftEntry['category'], string> = {
   'uncovered-code': 'uncovered',
   'dangling-code': 'dangling glob',
   'ambiguous-ownership': 'ambiguous',
+  'unknown-endpoint': 'design: unknown endpoint',
+  'bare-leaf': 'design: bare leaf',
+  'disconnected-system': 'design: disconnected',
+  'boundary-gap': 'design: boundary gap',
 }
 
 const HINT: Record<DriftEntry['category'], string> = {
@@ -20,6 +24,10 @@ const HINT: Record<DriftEntry['category'], string> = {
   'uncovered-code': "add each to a system's `code` glob, or to \"ignore\" in topo.config.json",
   'dangling-code': 'fix or remove these globs',
   'ambiguous-ownership': 'make one glob more specific, or nest one system inside the other (the child wins)',
+  'unknown-endpoint': 'declare the missing box or fix the name',
+  'bare-leaf': 'declare in/out/holds on every leaf — the boundary is what makes each level readable',
+  'disconnected-system': 'wire it in with boundaries + arrows, or fold its code into the system it serves',
+  'boundary-gap': 'declare the Thing on every edge the arrow crosses',
 }
 
 const GROUP_THRESHOLD = 6
@@ -40,13 +48,19 @@ export function renderReport(r: DriftReport): string {
 
   if (r.passed && r.entries.length === 0) return `✓ map is in sync  (${cov})`
 
-  // Clean and fully covered — the only thing left is to approve it. Not "drift".
-  if (r.entries.length > 0 && r.entries.every((e) => e.category === 'manifest-unapproved')) {
-    return `● not approved yet — coverage is clean (${cov}). Run \`topo approve\` to lock it in.`
-  }
+  const failures = r.entries.filter((e) => !e.warning)
+  const lines: string[] = []
 
-  const counts = `${r.failures} to fix${r.warnings ? `, ${r.warnings} warning${r.warnings > 1 ? 's' : ''}` : ''}`
-  const lines: string[] = [`✗ map has drifted — ${counts}  (${cov})`]
+  // Clean and fully covered — the only blocker is approval. Not "drift".
+  if (failures.length > 0 && failures.every((e) => e.category === 'manifest-unapproved')) {
+    lines.push(`● not approved yet — coverage is clean (${cov}). Run \`topo approve\` to lock it in.`)
+    if (r.warnings === 0) return lines[0]
+  } else if (failures.length === 0) {
+    lines.push(`✓ map is in sync  (${cov}) — ${r.warnings} design warning${r.warnings > 1 ? 's' : ''} below`)
+  } else {
+    const counts = `${r.failures} to fix${r.warnings ? `, ${r.warnings} warning${r.warnings > 1 ? 's' : ''}` : ''}`
+    lines.push(`✗ map has drifted — ${counts}  (${cov})`)
+  }
 
   const byCat = new Map<DriftEntry['category'], DriftEntry[]>()
   for (const e of r.entries) {

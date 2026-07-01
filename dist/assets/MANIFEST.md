@@ -26,16 +26,21 @@ thing <Name> { field: Type … }         // a data shape (optional; file scope)
 
   code "<glob>"                        // source files this system owns (see below)
   <A> --( <Thing> )--> <B>             // an authored connection (the arrows)
-  in <Thing> | out <Thing> | holds <Thing>   // optional boundary annotations
+  in <Thing> | out <Thing> | holds <Thing>   // the box's boundary — its interface
 ```
 
 - Names and Thing names are single identifiers (`[A-Za-z_]\w*`, no spaces).
-- **You draw the arrows.** Write `A --( Thing )--> B` connections by hand at the
-  level where they belong. Topo does **not** derive connections — the picture is
-  exactly what you author, so design it deliberately.
-- `in`/`out`/`holds` are optional labels for what data crosses a system's edge. They
-  document flow and drive the viewer's "follow a Thing" feature; they do **not**
-  create arrows.
+- **You draw the arrows.** Write `A --( Thing )--> B` connections by hand, in the
+  **nearest common parent** of the two endpoints. Topo does **not** derive
+  connections — the picture is exactly what you author, so design it deliberately.
+- **Boundaries are the interface, not decoration.** Every leaf declares them
+  (`activity` → `in`/`out`, `storage` → `holds`, `gateway` → what crosses to it),
+  and a container `system` declares every Thing that crosses its edge. This is what
+  makes the map readable at every zoom level: when an arrow runs from deep inside
+  one box to deep inside another, each edge it crosses should declare the Thing.
+  `topo check` warns (`design: boundary gap`) at minimum when a Thing flows through
+  a box that never declares it anywhere — but aim for the full contract, not the
+  minimum.
 
 ## `code` — binding systems to files
 
@@ -95,6 +100,16 @@ This is the **last approved (map, code) snapshot** — commit it.
 | `dangling-code` | a glob matches no source file | fix or remove the glob |
 | `ambiguous-ownership` | two equally-specific globs claim a file | make one more specific |
 | `manifest-unapproved` | `system.topo` changed (or was never approved) | `topo approve` |
+
+`topo check` also emits **design warnings** (non-blocking; `--strict` promotes them).
+They measure whether the map reads as a real diagram, not a file index — fix them:
+
+| Warning | Meaning | Fix |
+|---|---|---|
+| `design: bare leaf` | an activity/storage/gateway with no `in`/`out`/`holds` | declare its boundary — what does it take in, produce, or hold? |
+| `design: disconnected` | a box wired to nothing (no boundary, no arrows, whole subtree) | wire it in, or fold its code into the system it serves — don't keep a box just to own files |
+| `design: boundary gap` | an arrow crosses a box's edge the box doesn't declare | add `in`/`out` for that Thing on each crossed edge |
+| `design: unknown endpoint` | an arrow names a system that isn't declared | declare the box or fix the name |
 
 `topo approve` (no args) re-locks the whole repo. `topo approve <System…>` re-locks
 just those regions (keeping the rest of the lock) — useful to acknowledge a code

@@ -9,8 +9,10 @@ Topo hashes the owned code into `system.topo.lock` and `topo check` blocks on dr
 system / activity / storage / gateway — or moves the code a system owns — you MUST:
 
 1. Update `system.topo` to match reality: the systems, the `--( )-->` arrows, and
-   each system's `code "glob"` so every source file stays owned.
-2. Run `topo check` — a **hard blocker** (exit 0 = green). Fix every entry it lists.
+   each system's `code "glob"` so every source file stays owned. Design first, bind
+   code second — the map is a diagram of concepts, never a mirror of the file tree.
+2. Run `topo check` — a **hard blocker** (exit 0 = green). Fix every entry it lists,
+   and treat `design:` warnings as review feedback to resolve, not noise.
 3. Run `topo approve` — records the approved snapshot (`system.topo.lock`).
 4. Commit `system.topo`, `system.topo.lock`, and the code together.
 

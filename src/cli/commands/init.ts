@@ -30,10 +30,15 @@ export interface InitOptions {
 
 function starterMap(world: string): string {
   return `// ${world} — system map. Authored by hand; Topo does not generate this file.
-// Draw your systems, the arrows between them (A --( Thing )--> B), and give each
-// system a \`code "glob"\` line so every source file is owned. Then:
-//   topo check   → fix drift → topo approve   (writes system.topo.lock)
-// Full grammar: .claude/skills/topo/MANIFEST.md
+//
+// DESIGN FIRST, BIND CODE SECOND (see .claude/skills/topo/SKILL.md):
+//   Pass 1 — design the world as a diagram: 3–9 systems, every box with its
+//            boundary (in/out/holds), arrows (A --( Thing )--> B) between them.
+//            Map concepts, not directories. Ignore files entirely in this pass.
+//   Pass 2 — bind code: give each system a \`code "glob"\` until every source
+//            file is owned. Leftovers go to a parent's glob — never invent a
+//            box just to hold files.
+// Then: topo check → fix failures AND design warnings → topo approve.
 
 world ${world} {
 }

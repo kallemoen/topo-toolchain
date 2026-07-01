@@ -9967,12 +9967,142 @@ function writeLock(root, config, lock) {
 
 // src/core/coverage/check.ts
 import { dirname as dirname2 } from "node:path";
+
+// src/core/coverage/structure.ts
+function ancestors(name, world) {
+  const out = [];
+  let p = world.systems[name]?.parent;
+  while (p) {
+    out.push(p);
+    p = world.systems[p]?.parent;
+  }
+  return out;
+}
+function ancestorsBelow(name, stop, world) {
+  const chain = ancestors(name, world);
+  const idx = chain.indexOf(stop);
+  return idx === -1 ? chain : chain.slice(0, idx);
+}
+function lca(world, a, b) {
+  const aUp = /* @__PURE__ */ new Set([a, ...ancestors(a, world)]);
+  let cur = b;
+  while (cur) {
+    if (aUp.has(cur)) return cur;
+    cur = world.systems[cur]?.parent ?? null;
+  }
+  return world.root;
+}
+var hasBoundary = (s) => s.ins.length + s.outs.length + s.holds.length > 0;
+function designLints(world) {
+  const entries = [];
+  const systems = world.systems;
+  for (const c of world.conns) {
+    for (const end of [c.from, c.to]) {
+      if (!systems[end]) {
+        entries.push({
+          category: "unknown-endpoint",
+          system: end,
+          detail: `${c.from} --( ${c.thing} )--> ${c.to}: '${end}' is not a declared system.`,
+          location: null,
+          suggestion: `Declare '${end}' (or fix the name) \u2014 arrows must connect declared boxes.`
+        });
+      }
+    }
+  }
+  for (const s of Object.values(systems)) {
+    if (s.kind === "activity" || s.kind === "storage" || s.kind === "gateway") {
+      if (!hasBoundary(s)) {
+        entries.push({
+          category: "bare-leaf",
+          system: s.name,
+          detail: `${s.kind} ${s.name} declares no boundary (no in/out/holds).`,
+          location: null,
+          suggestion: s.kind === "storage" ? `Add 'holds <Thing>' \u2014 what accumulates in ${s.name}?` : `Add 'in <Thing>' / 'out <Thing>' \u2014 what does ${s.name} take in and produce?`
+        });
+      }
+    }
+  }
+  const touched = /* @__PURE__ */ new Set();
+  for (const s of Object.values(systems)) if (hasBoundary(s)) touched.add(s.name);
+  for (const c of world.conns) {
+    if (systems[c.from]) touched.add(c.from);
+    if (systems[c.to]) touched.add(c.to);
+  }
+  const subtreeTouched = /* @__PURE__ */ new Map();
+  const isTouched = (name) => {
+    const memo = subtreeTouched.get(name);
+    if (memo !== void 0) return memo;
+    const s = systems[name];
+    const v = !!s && (touched.has(name) || s.children.some(isTouched));
+    subtreeTouched.set(name, v);
+    return v;
+  };
+  for (const s of Object.values(systems)) {
+    if (s.kind === "world" || !s.parent) continue;
+    if (!isTouched(s.name) && isTouched(s.parent)) {
+      entries.push({
+        category: "disconnected-system",
+        system: s.name,
+        detail: `${s.name} is wired to nothing \u2014 no boundary, no arrows, in its whole subtree.`,
+        location: null,
+        suggestion: `Every box should participate in the story. Wire ${s.name} in (boundaries + arrows), or fold its code into the system it serves \u2014 don't keep a box just to own files.`
+      });
+    }
+  }
+  const mentions = /* @__PURE__ */ new Map();
+  const mentioned = (name) => {
+    const memo = mentions.get(name);
+    if (memo) return memo;
+    const s = systems[name];
+    const set = new Set(s ? [...s.ins, ...s.outs, ...s.holds] : []);
+    for (const child of s?.children ?? []) for (const t of mentioned(child)) set.add(t);
+    mentions.set(name, set);
+    return set;
+  };
+  for (const c of world.conns) {
+    const src = systems[c.from];
+    const dst = systems[c.to];
+    if (!src || !dst) continue;
+    const meet = lca(world, c.from, c.to);
+    const missing = [];
+    const crossings = [
+      { name: c.from, dir: "out" },
+      ...ancestorsBelow(c.from, meet, world).map((name) => ({ name, dir: "out" })),
+      { name: c.to, dir: "in" },
+      ...ancestorsBelow(c.to, meet, world).map((name) => ({ name, dir: "in" }))
+    ];
+    for (const { name, dir } of crossings) {
+      const s = systems[name];
+      if (!s || s.kind === "world") continue;
+      if (!mentioned(name).has(c.thing)) {
+        const kw = dir === "in" && s.kind === "storage" ? "holds" : dir;
+        missing.push(`${name} (add '${kw} ${c.thing}')`);
+      }
+    }
+    if (missing.length) {
+      entries.push({
+        category: "boundary-gap",
+        system: c.from,
+        detail: `${c.from} --( ${c.thing} )--> ${c.to} passes through boxes that never declare ${c.thing}: ${missing.join(", ")}.`,
+        location: null,
+        suggestion: `Declare ${c.thing} on those boundaries so the flow reads at every level.`
+      });
+    }
+  }
+  return entries;
+}
+
+// src/core/coverage/check.ts
 var CATEGORY_ORDER = {
   "manifest-unapproved": 0,
   "region-changed": 1,
   "uncovered-code": 2,
   "dangling-code": 3,
-  "ambiguous-ownership": 4
+  "ambiguous-ownership": 4,
+  "unknown-endpoint": 5,
+  "bare-leaf": 6,
+  "disconnected-system": 7,
+  "boundary-gap": 8
 };
 function mappedDirs(ownedFiles) {
   const dirs = /* @__PURE__ */ new Set();
@@ -9989,10 +10119,8 @@ function checkSnapshot(config, world, snapshot, lock, opts = {}) {
   const { policy } = config;
   const { ownership, regions } = snapshot;
   const entries = [];
-  const warn = /* @__PURE__ */ new Set();
   const add = (e, isWarning) => {
-    entries.push(e);
-    if (isWarning) warn.add(e);
+    entries.push(isWarning ? { ...e, warning: true } : e);
   };
   if (policy.coverage !== "off") {
     const owned = mappedDirs(ownership.owner.keys());
@@ -10035,6 +10163,7 @@ function checkSnapshot(config, world, snapshot, lock, opts = {}) {
       false
     );
   }
+  for (const e of designLints(world)) add(e, true);
   if (!lock) {
     add(
       {
@@ -10078,7 +10207,7 @@ function checkSnapshot(config, world, snapshot, lock, opts = {}) {
   entries.sort(
     (a, b) => CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category] || a.system.localeCompare(b.system) || a.detail.localeCompare(b.detail)
   );
-  const warnings = entries.filter((e) => warn.has(e)).length;
+  const warnings = entries.filter((e) => e.warning).length;
   const failures = entries.length - warnings;
   const blocking = failures + (opts.strict ? warnings : 0);
   const systemsWithCode = Object.keys(regions).length;
@@ -10104,14 +10233,22 @@ var LABEL = {
   "region-changed": "region changed",
   "uncovered-code": "uncovered",
   "dangling-code": "dangling glob",
-  "ambiguous-ownership": "ambiguous"
+  "ambiguous-ownership": "ambiguous",
+  "unknown-endpoint": "design: unknown endpoint",
+  "bare-leaf": "design: bare leaf",
+  "disconnected-system": "design: disconnected",
+  "boundary-gap": "design: boundary gap"
 };
 var HINT = {
   "manifest-unapproved": "run `topo approve`",
   "region-changed": "review the code; update system.topo if the structure changed, then `topo approve`",
   "uncovered-code": 'add each to a system\'s `code` glob, or to "ignore" in topo.config.json',
   "dangling-code": "fix or remove these globs",
-  "ambiguous-ownership": "make one glob more specific, or nest one system inside the other (the child wins)"
+  "ambiguous-ownership": "make one glob more specific, or nest one system inside the other (the child wins)",
+  "unknown-endpoint": "declare the missing box or fix the name",
+  "bare-leaf": "declare in/out/holds on every leaf \u2014 the boundary is what makes each level readable",
+  "disconnected-system": "wire it in with boundaries + arrows, or fold its code into the system it serves",
+  "boundary-gap": "declare the Thing on every edge the arrow crosses"
 };
 var GROUP_THRESHOLD = 6;
 function groupKey(e) {
@@ -10125,11 +10262,17 @@ function coverageLine(r) {
 function renderReport(r) {
   const cov = coverageLine(r);
   if (r.passed && r.entries.length === 0) return `\u2713 map is in sync  (${cov})`;
-  if (r.entries.length > 0 && r.entries.every((e) => e.category === "manifest-unapproved")) {
-    return `\u25CF not approved yet \u2014 coverage is clean (${cov}). Run \`topo approve\` to lock it in.`;
+  const failures = r.entries.filter((e) => !e.warning);
+  const lines = [];
+  if (failures.length > 0 && failures.every((e) => e.category === "manifest-unapproved")) {
+    lines.push(`\u25CF not approved yet \u2014 coverage is clean (${cov}). Run \`topo approve\` to lock it in.`);
+    if (r.warnings === 0) return lines[0];
+  } else if (failures.length === 0) {
+    lines.push(`\u2713 map is in sync  (${cov}) \u2014 ${r.warnings} design warning${r.warnings > 1 ? "s" : ""} below`);
+  } else {
+    const counts = `${r.failures} to fix${r.warnings ? `, ${r.warnings} warning${r.warnings > 1 ? "s" : ""}` : ""}`;
+    lines.push(`\u2717 map has drifted \u2014 ${counts}  (${cov})`);
   }
-  const counts = `${r.failures} to fix${r.warnings ? `, ${r.warnings} warning${r.warnings > 1 ? "s" : ""}` : ""}`;
-  const lines = [`\u2717 map has drifted \u2014 ${counts}  (${cov})`];
   const byCat = /* @__PURE__ */ new Map();
   for (const e of r.entries) {
     const a = byCat.get(e.category) ?? [];
@@ -10302,10 +10445,15 @@ var ASSETS_DIR = resolveAssetsDir();
 var ASSETS = ASSETS_DIR;
 function starterMap(world) {
   return `// ${world} \u2014 system map. Authored by hand; Topo does not generate this file.
-// Draw your systems, the arrows between them (A --( Thing )--> B), and give each
-// system a \`code "glob"\` line so every source file is owned. Then:
-//   topo check   \u2192 fix drift \u2192 topo approve   (writes system.topo.lock)
-// Full grammar: .claude/skills/topo/MANIFEST.md
+//
+// DESIGN FIRST, BIND CODE SECOND (see .claude/skills/topo/SKILL.md):
+//   Pass 1 \u2014 design the world as a diagram: 3\u20139 systems, every box with its
+//            boundary (in/out/holds), arrows (A --( Thing )--> B) between them.
+//            Map concepts, not directories. Ignore files entirely in this pass.
+//   Pass 2 \u2014 bind code: give each system a \`code "glob"\` until every source
+//            file is owned. Leftovers go to a parent's glob \u2014 never invent a
+//            box just to hold files.
+// Then: topo check \u2192 fix failures AND design warnings \u2192 topo approve.
 
 world ${world} {
 }

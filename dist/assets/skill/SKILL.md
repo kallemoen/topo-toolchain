@@ -5,62 +5,134 @@ description: Keep the Topo system map (system.topo) accurate. Use after any chan
 
 # Keep the Topo map accurate
 
-This repo's architecture is a **hand-authored manifest**, `system.topo`. You write
-the whole design in it — the systems, the arrows between them, and **which code each
-system owns** (via `code "glob"` lines). Topo hashes the owned code into
-`system.topo.lock` and `topo check` fails on drift. `topo check` is a HARD BLOCKER:
-do not finish a task while it is red.
+This repo's architecture is a **hand-authored map**, `system.topo` — a Topos "worlds
+within worlds" description: every box is a system, every arrow carries a named Thing.
+Each system also declares which code it owns (`code "glob"`); Topo hashes that code
+into `system.topo.lock` and `topo check` fails on drift. The check is a HARD BLOCKER.
 
-**Never write `//@topo` comments or any Topo markers in source code.** All structure
-lives in `system.topo`. The full grammar is in `MANIFEST.md` next to this file.
+**Never write `//@topo` comments or any Topo markers in source code.** Everything
+lives in `system.topo`. Full grammar reference: `MANIFEST.md` next to this file.
 
-## The loop (do this — it always converges)
+## The prime directive: design first, bind code second
+
+The map is a **design**, not a file index. Author it in two distinct passes:
+
+**Pass 1 — design the world (ignore files entirely).** Write the map you would draw
+on a whiteboard for a new engineer: the systems, what flows between them, what each
+box takes in and puts out. Judge it purely as a diagram: does every level tell a
+complete story?
+
+**Pass 2 — bind the code.** Only then add `code "glob"` lines so every source file is
+owned. **Binding must never reshape the design.** If files don't fit any box, they
+belong to the nearest parent system's glob — do NOT invent a box to hold leftovers.
+
+## Design rules (the house style — follow all of these)
+
+1. **Map concepts, not directories.** A box exists because the system *has* that part,
+   not because a folder exists. Never mirror the file tree (`api/` folders ≠ one
+   activity per route file). Two directories that implement one concept are ONE box.
+2. **Every level must read complete on its own.** A reader opening any box sees a
+   full picture: 3–9 labeled boxes, what each takes in / puts out, and arrows showing
+   who feeds whom. If a level only makes sense by peeking inside its children, the
+   boundaries are missing.
+3. **Every box declares its boundary.** Leaves always: an `activity` has `in`/`out`,
+   a `storage` has `holds`, a `gateway` declares what crosses to it. A container
+   `system` declares every Thing that crosses its edge. A box with no boundary is a
+   dead box on the diagram.
+4. **Arrows carry Things and are written in the nearest common parent.** When an
+   arrow crosses a box's edge, that box must declare the Thing (`in`/`out`). That's
+   what lets the same flow render truthfully at every zoom level.
+5. **No junk drawers.** Never create a system named Operations/Utils/Misc/Shared to
+   warehouse scripts, tests, types, or config. Bind those files to the system they
+   serve (tests of the validator belong to the validator) or to the parent container.
+6. **Right-size every level.** More than ~9 siblings → group them into a subsystem.
+   A container with one child → dissolve it. Depth is earned by real structure.
+7. **Name boxes by role, Things by payload.** `Validation`, not `SrcValidation`;
+   `Listing`, not `Data`. Single identifiers, PascalCase.
+
+## Worked exemplar — the shape to imitate
+
+```
+thing Order   { items: [text]  table: int }
+thing Cup     { drink: text  size: text }
+thing Beans   { origin: text  kg: number }
+thing Payment { amount: money  method: text }
+
+world CoffeeBar {
+
+  gateway Customer { out Order  in Cup  out Payment }
+  gateway Roaster  { in Payment  out Beans }
+
+  system FrontOfHouse {
+    code "src/front/**"
+    in Order   out Order     // takes the order, passes it back of house
+    in Cup     out Cup       // receives the drink, serves it
+    in Payment out Payment   // takes payment, forwards it to the roaster
+
+    activity TakeOrder { code "src/front/register.ts"  in Order  out Order }
+    activity Serve     { code "src/front/serve.ts"     in Cup    out Cup }
+  }
+
+  system BackOfHouse {
+    code "src/back/**"
+    in Order  in Beans  out Cup
+
+    activity Brew  { code "src/back/brew.ts"  in Order  in Beans  out Cup }
+    storage  Shelf { code "src/back/shelf.ts" holds Beans }
+
+    Shelf --( Beans )--> Brew
+  }
+
+  Customer     --( Order )-->   TakeOrder
+  TakeOrder    --( Order )-->   Brew
+  Brew         --( Cup )-->     Serve
+  Serve        --( Cup )-->     Customer
+  Customer     --( Payment )--> FrontOfHouse
+  FrontOfHouse --( Payment )--> Roaster
+  Roaster      --( Beans )-->   Shelf
+}
+```
+
+Study why this reads well: the world level alone tells the whole story (order in, cup
+out, payment funds beans). Arrows may run to nested leaves (`Customer → TakeOrder`),
+and every edge they cross declares the Thing — that's why FrontOfHouse's boundary
+lists `in Order out Order`: the order enters it and leaves it. Every leaf has a
+boundary. Code binding follows the design, not the other way around. This map
+produces zero design warnings — yours should too.
+
+## The loop (maintenance — do this after every structural change)
 
 1. Make your code change.
-2. Open `system.topo` and make it match reality: add/rename/rewire systems, update
-   the `--( )-->` arrows, and adjust each system's `code "glob"` so every file stays
-   owned by the right system.
-3. Run **`topo check`**. Read each entry (it names the file/system + a fix) and
-   resolve them all:
-   - `uncovered-code` → a file no system owns. Extend the owning system's `code`
-     glob, or add the file to `ignore` in `topo.config.json` if it isn't a system.
-   - `region-changed` → the code under a system changed. Confirm the diagram still
-     reflects it; update `system.topo` if the structure moved.
-   - `dangling-code` → a glob matches nothing. Fix or remove it.
-   - `ambiguous-ownership` → two *unrelated* systems claim a file equally. Make one
-     glob more specific. (A parent and its own child sharing a glob is fine — the
-     child wins automatically; this only fires for unrelated systems.)
-   - `manifest-unapproved` → you edited the map (or there's no lock yet). Approve it.
-4. Run **`topo approve`** — records the current map + code as the approved snapshot
-   (writes `system.topo.lock`). `topo check` is now green.
-5. Commit `system.topo`, `system.topo.lock`, and your code together.
-
-`topo approve <System…>` re-locks only those systems (keep the rest) when you only
-touched one area.
+2. Update `system.topo` to match reality: boxes, boundaries, arrows, and the
+   `code "glob"` lines, applying the design rules above.
+3. Run **`topo check`** and resolve what it reports:
+   - **Failures** (block): `uncovered-code` (extend a glob or `ignore` non-code),
+     `region-changed` (confirm the diagram still reflects the code), `dangling-code`,
+     `ambiguous-ownership` (two *unrelated* systems claim a file — a parent + its own
+     child sharing a glob is fine, the child wins), `manifest-unapproved`.
+   - **`design:` warnings** (don't block, but treat them as review feedback):
+     `bare-leaf`, `disconnected`, `boundary-gap`, `unknown endpoint`. Fix them —
+     they are precisely the difference between a file index and a real map.
+4. Run **`topo approve`** — locks the approved snapshot (`system.topo.lock`).
+5. Commit `system.topo`, `system.topo.lock`, and the code together.
 
 > If `topo.config.json` sets `policy.approval` to `"human"`, do NOT run `topo approve`
-> yourself — leave the review to a person (they run `topo approve --confirm` or use
-> the viewer). Otherwise (the default `"agent"`), run it as step 4.
+> yourself — a person approves (via `topo approve --confirm` or the viewer).
 
-## First run — authoring the map from scratch
+## First run — authoring from scratch
 
-If `system.topo` is just the empty `world { }` scaffold:
-
-1. **Design top-down.** Identify the significant systems — the parts a new engineer
-   would draw on a whiteboard: services, apps, modules, jobs, datastores, and the
-   external dependencies you call (`gateway`). Write them as nested `system` /
-   `activity` / `storage` / `gateway` blocks. Don't annotate code — compose the
-   whole picture here.
-2. **Draw the arrows.** Add `A --( Thing )--> B` connections for the real data flows.
-3. **Assign the code.** Give each system a `code "glob"` so that **every** source
-   file is owned (coverage is whole-repo strict by default). Start with broad
-   directory globs, then refine.
-4. Run `topo check` until only `manifest-unapproved` remains, then `topo approve`.
+1. Survey the codebase top-down (READMEs, entry points, deploy targets) until you can
+   name the 3–9 top-level systems and the external gateways.
+2. **Pass 1**: write the full design — things, gateways, systems with boundaries,
+   arrows — judged only as a diagram (rules above, exemplar as the bar).
+3. **Pass 2**: bind code with `code` globs until `topo check` shows full coverage.
+   Leftover files go to parent globs, never to new boxes.
+4. `topo check` → fix failures AND design warnings → `topo approve` → green.
 
 ## Hard rules
 
 - NEVER write `//@topo` markers or any Topo comment in source files.
 - NEVER finish a task with `topo check` red.
+- NEVER invent a system just to own files (no junk drawers).
 - NEVER hand-edit `system.topo.lock` — it's produced by `topo approve`.
-- Keep the diagram honest: if you can't draw it cleanly, the design is telling you
-  something — fix the map to match reality, don't paper over it.
+- Leave zero `design:` warnings you can't justify out loud.

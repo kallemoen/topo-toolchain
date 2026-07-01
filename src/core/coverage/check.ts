@@ -13,6 +13,7 @@ import type { ToposWorld } from '../topos'
 import type { DriftEntry, DriftReport } from '../types'
 import type { LockFile } from './lock'
 import type { Snapshot } from './snapshot'
+import { designLints } from './structure'
 
 const CATEGORY_ORDER: Record<DriftEntry['category'], number> = {
   'manifest-unapproved': 0,
@@ -20,6 +21,10 @@ const CATEGORY_ORDER: Record<DriftEntry['category'], number> = {
   'uncovered-code': 2,
   'dangling-code': 3,
   'ambiguous-ownership': 4,
+  'unknown-endpoint': 5,
+  'bare-leaf': 6,
+  'disconnected-system': 7,
+  'boundary-gap': 8,
 }
 
 /** Directories (and their ancestors) that already contain an owned file. */
@@ -45,11 +50,9 @@ export function checkSnapshot(
   const { policy } = config
   const { ownership, regions } = snapshot
   const entries: DriftEntry[] = []
-  const warn = new Set<DriftEntry>()
 
   const add = (e: DriftEntry, isWarning: boolean) => {
-    entries.push(e)
-    if (isWarning) warn.add(e)
+    entries.push(isWarning ? { ...e, warning: true } : e)
   }
 
   // 1. Coverage — every universe file must be owned (policy.coverage).
@@ -99,7 +102,11 @@ export function checkSnapshot(
     )
   }
 
-  // 4. Approval / region freshness vs the lock.
+  // 4. Design lints — quality of the map itself. Warnings: they guide the author
+  // toward a map that reads complete at every level without blocking the commit.
+  for (const e of designLints(world)) add(e, true)
+
+  // 5. Approval / region freshness vs the lock.
   if (!lock) {
     add(
       {
@@ -148,7 +155,7 @@ export function checkSnapshot(
       a.detail.localeCompare(b.detail),
   )
 
-  const warnings = entries.filter((e) => warn.has(e)).length
+  const warnings = entries.filter((e) => e.warning).length
   const failures = entries.length - warnings
   const blocking = failures + (opts.strict ? warnings : 0)
   const systemsWithCode = Object.keys(regions).length

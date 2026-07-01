@@ -11,6 +11,11 @@ export type DriftCategory =
   | 'dangling-code' // a `code` glob matches no source file
   | 'ambiguous-ownership' // a file is claimed by two equally-specific globs
   | 'manifest-unapproved' // system.topo changed (or was never approved) vs the lock
+  // design lints — map QUALITY feedback (warnings unless --strict):
+  | 'bare-leaf' // an activity/storage/gateway with no in/out/holds
+  | 'disconnected-system' // a box wired to nothing in its whole subtree
+  | 'boundary-gap' // an arrow crosses a box's edge the box doesn't declare
+  | 'unknown-endpoint' // an arrow to/from an undeclared system name
 
 export interface DriftEntry {
   category: DriftCategory
@@ -18,6 +23,7 @@ export interface DriftEntry {
   detail: string
   location: SourceLocation | null
   suggestion: string
+  warning?: boolean // true = non-blocking (promoted to a failure by --strict)
 }
 
 export interface CoverageStats {
