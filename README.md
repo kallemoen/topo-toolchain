@@ -15,30 +15,18 @@ Topo is built to be run **by your coding agent** (Claude Code, Cursor, or any ag
 ```text
 Set up Topo in this repo so I can see how it works as a live map.
 
-1. Install the CLI once:
-     npm i -g --install-links github:kallemoen/topo-toolchain
-   (The --install-links flag is required: it makes npm fetch the release
-   tarball instead of a git clone, so the global install is a plain-JS file
-   copy that works in sandboxes. Don't drop it.)
-2. Run:  topo init   — scaffolds the map, an agent skill, a rule, and a
-   pre-commit hook. It also installs .claude/skills/topo-sync/ — READ IT.
-3. Add //@topo comment markers to each significant system (service, module,
-   job, datastore), right where it lives in the code. The keyword is the kind:
-     //@topo system   <Name> [parent=<Parent>]   # an open container (has children)
-     //@topo activity <Name> [parent=<Parent>]   # does something
-     //@topo storage  <Name> [parent=<Parent>]   # holds things
-     //@topo gateway  <Name>                      # an external dependency
-     //@topo in <Thing>     # data the system accepts
-     //@topo out <Thing>    # data the system emits
-   Names and Things are single words (no spaces). Connections are derived
-   from out↔in — never write them by hand.
-4. Run:  topo sync    — writes the live map from your markers.
-5. Run:  topo check   — must be green (exit 0). If red, fix the markers and
-   go back to step 4. Repeat until green.
-6. Run:  topo view    so I can watch the map live in my browser.
+1. Install the CLI:  npm i -g --install-links github:kallemoen/topo-toolchain
+   (Keep the --install-links flag — it's what makes the global install work.)
+2. Run:  topo init   — scaffolds the map + a pre-commit hook and installs the
+   Topo skill at .claude/skills/topo-sync/.
+3. Read .claude/skills/topo-sync/SKILL.md and follow it: add //@topo markers to
+   the significant systems in the code, then run `topo sync` and `topo check`
+   until the check is green. The skill has the full marker grammar — use it,
+   don't guess.
+4. Run:  topo view   so I can watch the live map in my browser.
 
-Keep the //@topo markers in sync whenever you change structure, run
-`topo sync` after, and never finish with `topo check` red.
+Then keep it green: whenever you change structure, update the //@topo markers,
+run `topo sync`, and never finish with `topo check` red.
 ```
 
 No setup, no account, no keys, **no native build** — it installs as plain JS and works in sandboxes. Nothing leaves your repo.

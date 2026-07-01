@@ -13,6 +13,23 @@ it is red.
 You have everything you need below — you should NOT need to read the tool's source.
 For the full marker reference see `MARKERS.md` next to this file.
 
+## First run — marking up a repo from scratch
+
+If the map is empty (a fresh `topo init`), survey the codebase and place the
+initial markers, then run the loop below:
+
+1. Find the **significant systems** — the parts a new engineer would draw on a
+   whiteboard: services, apps, modules/packages, background jobs, datastores,
+   and the external dependencies you call (payment, auth, email, third-party
+   APIs). Skip trivial helpers, types, and glue.
+2. For each, add a `//@topo` marker **in the file that implements it** (grammar
+   below): `system` for a container, `activity`/`storage` for leaves, `gateway`
+   for external deps. Name the data crossing each edge with `in`/`out`/`holds` —
+   that's what wires systems together (connections are derived, never written).
+3. Run `topo sync`, then `topo check`, and iterate until green — same loop as
+   maintenance. Start coarse (top-level systems) and refine; you don't have to
+   mark everything at once.
+
 ## The loop (do this — it always converges)
 
 1. Make your code change.
