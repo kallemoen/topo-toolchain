@@ -1,4 +1,3 @@
-#!/usr/bin/env -S npx tsx
 // topo — the Topo Repo Toolchain CLI.
 // Keeps an accurate Topo system map in sync with code: markers in code are the
 // source of truth, the .topo map is regenerated from them, and `topo check` is a
@@ -6,6 +5,7 @@
 
 import { Command } from 'commander'
 import { runCheck } from './commands/check'
+import { runSync } from './commands/sync'
 import { runRegen } from './commands/regen'
 import { runApprove } from './commands/approve'
 import { runInit } from './commands/init'
@@ -27,13 +27,19 @@ program
   .action((o) => process.exit(runCheck({ dir: o.dir, json: o.json, strict: o.strict })))
 
 program
-  .command('regen')
-  .alias('propose')
-  .description('Regenerate the map from markers (default: write system.draft.topo)')
+  .command('sync')
+  .alias('regen')
+  .description('Regenerate the live map from markers — the agent loop to get check green')
   .option('--dir <path>', 'repo directory')
-  .option('--write', 'write the live map directly (discouraged)')
   .option('--json', 'machine-readable summary')
-  .action((o) => process.exit(runRegen({ dir: o.dir, write: o.write, json: o.json })))
+  .action((o) => process.exit(runSync({ dir: o.dir, json: o.json })))
+
+program
+  .command('propose')
+  .description('Write a draft map (system.draft.topo) for a human to review & approve')
+  .option('--dir <path>', 'repo directory')
+  .option('--json', 'machine-readable summary')
+  .action((o) => process.exit(runRegen({ dir: o.dir, json: o.json })))
 
 program
   .command('approve')

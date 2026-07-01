@@ -7,8 +7,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, extname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import type { ToposConfig } from '../core/config'
+import { ASSETS_DIR } from '../core/assets'
 import { mapPath, draftPath } from '../core/paths'
 import { scanClaims } from '../core/markers/scan'
 import { parseTopos } from '../core/topos'
@@ -16,7 +16,7 @@ import { compare } from '../core/compare/compare'
 import { watchRepo } from './watch'
 import { runApprove } from '../cli/commands/approve'
 
-const DIST = fileURLToPath(new URL('../assets/viewer-dist/', import.meta.url))
+const DIST = join(ASSETS_DIR, 'viewer-dist')
 
 const MIME: Record<string, string> = {
   '.html': 'text/html',

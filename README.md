@@ -16,7 +16,8 @@ Topo is built to be run **by your coding agent** (Claude Code, Cursor, or any ag
 Set up Topo in this repo so I can see how it works as a live map.
 
 1. Install the CLI once:  npm i -g github:kallemoen/topo-toolchain
-2. Run:  topo init   — scaffolds the map, an agent rule, and a pre-commit hook.
+2. Run:  topo init   — scaffolds the map, an agent skill, a rule, and a
+   pre-commit hook. It also installs .claude/skills/topo-sync/ — READ IT.
 3. Add //@topo comment markers to each significant system (service, module,
    job, datastore), right where it lives in the code. The keyword is the kind:
      //@topo system   <Name> [parent=<Parent>]   # an open container (has children)
@@ -25,16 +26,18 @@ Set up Topo in this repo so I can see how it works as a live map.
      //@topo gateway  <Name>                      # an external dependency
      //@topo in <Thing>     # data the system accepts
      //@topo out <Thing>    # data the system emits
-4. Run:  topo check   and fix drift until it passes (exit 0).
-5. Run:  topo propose  and leave the draft map for me to review.
-6. Run:  topo view   so I can watch the map live in my browser.
+   Names and Things are single words (no spaces). Connections are derived
+   from out↔in — never write them by hand.
+4. Run:  topo sync    — writes the live map from your markers.
+5. Run:  topo check   — must be green (exit 0). If red, fix the markers and
+   go back to step 4. Repeat until green.
+6. Run:  topo view    so I can watch the map live in my browser.
 
-Keep the //@topo markers in sync whenever you change structure, and never
-finish with `topo check` red. Connections are derived from out↔in — don't
-write them by hand.
+Keep the //@topo markers in sync whenever you change structure, run
+`topo sync` after, and never finish with `topo check` red.
 ```
 
-No setup, no account, no keys. Nothing leaves your repo.
+No setup, no account, no keys, **no native build** — it installs as plain JS and works in sandboxes. Nothing leaves your repo.
 
 > Prefer not to install globally? Every command also works as `npx github:kallemoen/topo-toolchain <cmd>`.
 
@@ -54,7 +57,7 @@ Most diagrams are wrong within a week. Topo keeps tiny markers next to the code 
 
 1. **Markers live in the code.** A one-line `//@topo` comment marks each system, right where it's written. Move the code, the marker moves with it.
 2. **The check is the gate.** `topo check` compares code to map and fails on any drift — pointing at the exact `file:line`. Wire it into a pre-commit hook and "done" requires a green map.
-3. **Your agent keeps it green.** An installed skill + rule make updating the map non-optional. The agent loops fix → propose until in sync, then leaves a draft for you to approve.
+3. **Your agent keeps it green.** An installed skill + rule make updating the map non-optional. The agent loops fix markers → `topo sync` → `topo check` until it's green — no human in the loop. (A `propose`/`approve` review gate is there when you *want* to eyeball a change first.)
 
 ## How your agent marks it up
 
@@ -68,15 +71,18 @@ You don't write these by hand — the agent does. It tags each system where it l
 
 `Charges` becomes a box on the map, wired by its boundary. Anything that emits `Charge` now points into whatever accepts `Charge` — automatically. Connections are **derived, never hand-drawn**.
 
-## Five commands. That's the whole tool.
+## Six commands. That's the whole tool.
+
+The everyday loop is just `sync` → `check`. `propose`/`approve` are an optional human-review gate.
 
 | Command | What it does | Exit |
 |---|---|---|
 | `topo init` | Drop the tool in: scaffold the map, the agent skill + rule, and a pre-commit hook. Idempotent, never clobbers. | `0` / `2` |
-| `topo view` | Open the live map in your browser — the part you actually look at. Redraws on every save. | `0` / `2` |
+| `topo sync` | Regenerate the live map from the code markers. The agent's normal loop to reach a green check. | `0` / `2` |
 | `topo check` | Compare code to map and report drift. The gate that keeps the picture honest. | `0` sync · `1` drift · `2` error |
-| `topo propose` | Regenerate the map from the code markers and write it to a draft for review. | `0` / `2` |
-| `topo approve` | Accept the draft as the live map (or `--reject` to discard). | `0` / `1` / `2` |
+| `topo view` | Open the live map in your browser — the part you actually look at. Redraws on every save. | `0` / `2` |
+| `topo propose` | *(optional)* Regenerate to a **draft** map instead of live, for a human to review. | `0` / `2` |
+| `topo approve` | *(optional)* Accept the draft as the live map (or `--reject` to discard). | `0` / `1` / `2` |
 
 ## The map vs. the markers
 
@@ -99,11 +105,14 @@ git clone https://github.com/kallemoen/topo-toolchain && cd topo-toolchain
 npm install
 npm run typecheck      # tsc --noEmit
 npm test               # vitest (grammar, scan, serialize round-trip, compare, merge)
-npm run topo -- check --dir <repo>
+npm run topo -- check --dir <repo>     # run the CLI from source via tsx
 npm run build:viewer   # rebuild the viewer bundle into src/assets/viewer-dist
+npm run build          # bundle the CLI → dist/topo.mjs (commit this before pushing)
 ```
 
-Stack: Node 20 + TypeScript + tsx + ESM; the viewer is Vite + React 19 + [`@xyflow/react`](https://github.com/xyflow/xyflow). No model, no API keys, no cloud.
+The shipped CLI is a single pre-bundled file, `dist/topo.mjs`, with **no runtime dependencies and no install scripts** — that's what makes `npm i -g github:…` a reliable file-copy in restricted sandboxes. `dist/` is committed; run `npm run build` and commit it whenever you change `src/`.
+
+Stack: Node 20 + TypeScript + ESM, bundled with esbuild; the viewer is Vite + React 19 + [`@xyflow/react`](https://github.com/xyflow/xyflow). No model, no API keys, no cloud.
 
 ## License
 

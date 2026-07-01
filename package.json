@@ -6,35 +6,33 @@
   "private": true,
   "license": "MIT",
   "bin": {
-    "topo": "./bin/topo.mjs"
+    "topo": "./dist/topo.mjs"
   },
   "files": [
-    "bin",
-    "src",
+    "dist",
     "README.md"
   ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
+    "build": "bash scripts/build.sh",
     "topo": "tsx src/cli/index.ts",
-    "postinstall": "node -e \"try{require('fs').chmodSync('bin/topo.mjs',0o755)}catch(e){}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "build:viewer": "bash scripts/build-viewer.sh",
     "sync:core": "bash scripts/sync-core.sh"
   },
-  "dependencies": {
+  "devDependencies": {
+    "@types/node": "^22.13.0",
     "chalk": "^5.4.1",
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
+    "esbuild": "^0.24.2",
     "fast-glob": "^3.3.3",
     "ignore": "^7.0.3",
-    "tsx": "^4.19.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
   }
