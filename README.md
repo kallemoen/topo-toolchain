@@ -15,8 +15,10 @@ Topo is built to be run **by your coding agent** (Claude Code, Cursor, or any ag
 ```text
 Set up Topo in this repo so I can see how it works as a live map.
 
-1. Install the CLI:  npm i -g --install-links github:kallemoen/topo-toolchain
-   (Keep the --install-links flag — it's what makes the global install work.)
+1. Make the CLI available — nothing global:
+     • repo has a package.json:  npm i -D github:kallemoen/topo-toolchain
+       then run every command as `npx topo <cmd>`
+     • otherwise, zero-install:  npx github:kallemoen/topo-toolchain <cmd>
 2. Run:  topo init   — scaffolds an empty map + a pre-commit hook and installs
    the Topo skill at .claude/skills/topo/.
 3. Read .claude/skills/topo/SKILL.md and follow it: in system.topo, design the
@@ -33,7 +35,7 @@ run `topo approve`, and never finish with `topo check` red.
 
 No setup, no account, no keys, **no native build** — it installs as plain JS and works in sandboxes. Nothing leaves your repo.
 
-> Prefer not to install globally? Every command also works as `npx github:kallemoen/topo-toolchain <cmd>` (npx doesn't need the flag). If a global install ever misbehaves, the bulletproof form is the tarball URL: `npm i -g "https://github.com/kallemoen/topo-toolchain/archive/refs/heads/main.tar.gz"`.
+> Prefer a global `topo` on your PATH? `npm i -g --install-links github:kallemoen/topo-toolchain` — the `--install-links` flag is required (it makes npm fetch the tarball instead of a git-clone symlink that dangles). Flag-free alternative: `npm i -g "https://github.com/kallemoen/topo-toolchain/archive/refs/heads/main.tar.gz"`.
 
 ---
 

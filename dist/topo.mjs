@@ -10580,7 +10580,7 @@ ${note}`);
           hookFile,
           `
 # --- Topo drift guard (added by topo init) ---
-if command -v topo >/dev/null 2>&1; then topo check || exit 1; else npx --no-install topo check || exit 1; fi
+if command -v topo >/dev/null 2>&1; then topo check || exit 1; elif npx --no-install topo --version >/dev/null 2>&1; then npx --no-install topo check || exit 1; else npx --yes github:kallemoen/topo-toolchain check || exit 1; fi
 `
         );
         log(`appended a Topo drift check to the existing pre-commit hook`);

@@ -13,6 +13,10 @@ into `system.topo.lock` and `topo check` fails on drift. The check is a HARD BLO
 **Never write `//@topo` comments or any Topo markers in source code.** Everything
 lives in `system.topo`. Full grammar reference: `MANIFEST.md` next to this file.
 
+> Commands below are written as `topo …`. If the CLI is a devDependency of this
+> repo, run them as `npx topo …`; with no install at all, use
+> `npx github:kallemoen/topo-toolchain …`. A global install is never required.
+
 ## The prime directive: design first, bind code second
 
 The map is a **design**, not a file index. Author it in two distinct passes:

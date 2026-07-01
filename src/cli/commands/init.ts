@@ -111,7 +111,7 @@ export function runInit(opts: InitOptions): number {
       } else if (!readFileSync(hookFile, 'utf8').includes('Topo drift guard')) {
         appendFileSync(
           hookFile,
-          `\n# --- Topo drift guard (added by topo init) ---\nif command -v topo >/dev/null 2>&1; then topo check || exit 1; else npx --no-install topo check || exit 1; fi\n`,
+          `\n# --- Topo drift guard (added by topo init) ---\nif command -v topo >/dev/null 2>&1; then topo check || exit 1; elif npx --no-install topo --version >/dev/null 2>&1; then npx --no-install topo check || exit 1; else npx --yes github:kallemoen/topo-toolchain check || exit 1; fi\n`,
         )
         log(`appended a Topo drift check to the existing pre-commit hook`)
       } else {

@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 # Topo drift guard — installed by `topo init`.
-# Blocks the commit when the system map has drifted from the code markers.
+# Blocks the commit when the system map has drifted from the code.
 # Real emergency? Bypass with: git commit --no-verify
 #
-# Resolves the `topo` CLI in this order: $TOPO_BIN, a `topo` on PATH, then npx.
+# Resolves the `topo` CLI in this order: $TOPO_BIN, a `topo` on PATH, a local
+# devDependency (npx --no-install), then zero-install straight from GitHub.
 
 run_topo() {
   if [ -n "$TOPO_BIN" ]; then
     $TOPO_BIN "$@"
   elif command -v topo >/dev/null 2>&1; then
     topo "$@"
-  else
+  elif npx --no-install topo --version >/dev/null 2>&1; then
     npx --no-install topo "$@"
+  else
+    npx --yes github:kallemoen/topo-toolchain "$@"
   fi
 }
 
